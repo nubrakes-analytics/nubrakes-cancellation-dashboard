@@ -253,7 +253,6 @@
         <select id="typeSelect" class="select"></select>
         <select id="reasonSelect" class="select"></select>
         <select id="categorySelect" class="select"></select>
-        <select id="techSelect" class="select"></select>
         <select id="withdrawalSelect" class="select"></select>
         <input type="date" id="dateFrom" />
         <input type="date" id="dateTo" />
@@ -264,7 +263,6 @@
         <button class="tab-btn active" data-tab="overview">Overview</button>
         <button class="tab-btn" data-tab="trends">Trends</button>
         <button class="tab-btn" data-tab="details">Details</button>
-        <button class="tab-btn" data-tab="debug">Debug</button>
       </div>
 
       <div id="overviewTab">
@@ -374,13 +372,6 @@
           </div>
         </div>
       </div>
-
-      <div id="debugTab" class="hidden">
-        <div class="card">
-          <div class="section-label">Debug / Data Validation</div>
-          <div id="debugOutput" class="debug-box"></div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -431,7 +422,6 @@
       type: "All Types",
       reason: "All Reasons",
       category: "All Categories",
-      tech: "All Technicians",
       withdrawal: "All Withdrawal Types",
       dateFrom: "",
       dateTo: "",
@@ -611,7 +601,6 @@
       setBadgeError(err?.message || String(err));
       el("subtitle").textContent = "Failed to load or render the cancellation dashboard.";
       el("kpiGrid").innerHTML = `<div class="card" style="grid-column:1/-1;"><div class="section-label">Dashboard Error</div><div class="metric-value" style="font-size:16px;color:var(--red);">${safe(err?.message || err)}</div><div class="small-muted">Source: ${safe(DATA_URL)}</div></div>`;
-      el("debugOutput").innerHTML = renderDebugHtml();
     }
 
     function optionList(allLabel, values, selected){
@@ -624,7 +613,6 @@
         (exclude === "type" || state.type === "All Types" || r._type === state.type) &&
         (exclude === "reason" || state.reason === "All Reasons" || r.full_reason === state.reason) &&
         (exclude === "category" || state.category === "All Categories" || r._category === state.category) &&
-        (exclude === "tech" || state.tech === "All Technicians" || r.tech_name === state.tech || r.original_technician === state.tech) &&
         (exclude === "withdrawal" || state.withdrawal === "All Withdrawal Types" || r._withdrawalType === state.withdrawal)
       );
     }
@@ -633,8 +621,6 @@
       el("typeSelect").innerHTML = optionList("All Types", uniqueSorted(getScopedRows("type"), "_type"), state.type);
       el("reasonSelect").innerHTML = optionList("All Reasons", uniqueSorted(getScopedRows("reason"), "full_reason"), state.reason);
       el("categorySelect").innerHTML = optionList("All Categories", uniqueSorted(getScopedRows("category"), "_category"), state.category);
-      const techs = [...new Set(getScopedRows("tech").flatMap(r => [r.tech_name, r.original_technician]).filter(Boolean))].sort();
-      el("techSelect").innerHTML = optionList("All Technicians", techs, state.tech);
       el("withdrawalSelect").innerHTML = optionList("All Withdrawal Types", uniqueSorted(getScopedRows("withdrawal"), "_withdrawalType"), state.withdrawal);
       el("dateFrom").value = state.dateFrom;
       el("dateTo").value = state.dateTo;
@@ -646,7 +632,6 @@
         (state.type === "All Types" || r._type === state.type) &&
         (state.reason === "All Reasons" || r.full_reason === state.reason) &&
         (state.category === "All Categories" || r._category === state.category) &&
-        (state.tech === "All Technicians" || r.tech_name === state.tech || r.original_technician === state.tech) &&
         (state.withdrawal === "All Withdrawal Types" || r._withdrawalType === state.withdrawal) &&
         (!state.dateFrom || r.appointment_date >= state.dateFrom) &&
         (!state.dateTo || r.appointment_date <= state.dateTo)
@@ -682,7 +667,6 @@
       el("overviewTab").classList.toggle("hidden", state.tab !== "overview");
       el("trendsTab").classList.toggle("hidden", state.tab !== "trends");
       el("detailsTab").classList.toggle("hidden", state.tab !== "details");
-      el("debugTab").classList.toggle("hidden", state.tab !== "debug");
       document.querySelectorAll("#mixViewToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.mixView === state.mixView));
       document.querySelectorAll("#trendMetricToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.trendMetric === state.trendMetric));
       document.querySelectorAll("#trendChartToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.chartType === state.trendChartType));
@@ -713,7 +697,6 @@
         ["Top HQ Driver", hqRows.length ? `${topItem(hqRows, r => r._reason)} is the leading HQ reason. Category: ${topItem(hqRows, r => r._category)}.` : "No HQ cancellations in the current filter."],
         ["Top Customer Signal", custRows.length ? `${topItem(custRows, r => r._reason)} is the leading customer reason. Category: ${topItem(custRows, r => r._category)}.` : "No customer cancellations in the current filter."],
         ["Market Concentration", hqRows.length ? `${topItem(hqRows, r => r.market)} has the highest HQ cancellation volume in the current filter.` : "No HQ market concentration to show."],
-        ["Technician View", hqRows.length ? `${topItem(hqRows, r => r.tech_name)} has the highest assigned-tech HQ cancellation count.` : "No HQ technician pattern to show."],
         ["Reschedule Context", `${fmt(a.reschedule)} of ${fmt(a.total)} cancellations are reschedules (${pct(a.reschedule,a.total)}).${a.total && a.reschedule/a.total >= 0.4 ? " Gross cancellations may overstate true lost demand." : ""}`]
       ];
       el("insightsGrid").innerHTML = insights.map(i => `<div class="insight-card"><div class="insight-title">${safe(i[0])}</div><div class="insight-text">${safe(i[1])}</div></div>`).join("");
@@ -823,19 +806,6 @@
       }).join("");
     }
 
-    function renderDebugHtml(){
-      const sample = state.rows[0] || null;
-      const tests = state.testResults.map(t => `${t.pass ? "✅" : "❌"} ${safe(t.name)}${t.error ? ": " + safe(t.error) : ""}`).join("<br>");
-      return `
-        <div><strong>Source:</strong> ${safe(DATA_URL)}</div>
-        <div><strong>Raw rows:</strong> ${fmt(state.rawRows.length)}</div>
-        <div><strong>Normalized rows:</strong> ${fmt(state.rows.length)}</div>
-        <div><strong>Filtered rows:</strong> ${fmt(state.filtered.length)}</div>
-        <div><strong>Tests:</strong><br>${tests || "Not run"}</div>
-        <pre style="white-space:pre-wrap;margin-top:10px;">${safe(JSON.stringify(sample, null, 2))}</pre>
-      `;
-    }
-    function renderDebug(){ el("debugOutput").innerHTML = renderDebugHtml(); }
 
     function render(){
       applyFilters();
@@ -849,11 +819,10 @@
       renderTrendChart();
       renderTimingAndWithdrawal();
       renderDetailTable();
-      renderDebug();
     }
 
     function resetFilters(){
-      Object.assign(state, { market:"All Markets", type:"All Types", reason:"All Reasons", category:"All Categories", tech:"All Technicians", withdrawal:"All Withdrawal Types", dateFrom:"", dateTo:"", tableSearch:"", page:1 });
+      Object.assign(state, { market:"All Markets", type:"All Types", reason:"All Reasons", category:"All Categories", withdrawal:"All Withdrawal Types", dateFrom:"", dateTo:"", tableSearch:"", page:1 });
       el("tableSearch").value = "";
       render();
     }
@@ -873,12 +842,11 @@
 
     function bindEvents(){
       document.querySelectorAll(".period-btn").forEach(btn => btn.addEventListener("click", () => { state.period = btn.dataset.period; render(); }));
-      document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => { state.tab = btn.dataset.tab; renderControls(); renderDebug(); }));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => { state.tab = btn.dataset.tab; renderControls(); }));
       el("marketSelect").addEventListener("change", e => { state.market = e.target.value; render(); });
       el("typeSelect").addEventListener("change", e => { state.type = e.target.value; render(); });
       el("reasonSelect").addEventListener("change", e => { state.reason = e.target.value; render(); });
       el("categorySelect").addEventListener("change", e => { state.category = e.target.value; render(); });
-      el("techSelect").addEventListener("change", e => { state.tech = e.target.value; render(); });
       el("withdrawalSelect").addEventListener("change", e => { state.withdrawal = e.target.value; render(); });
       el("dateFrom").addEventListener("change", e => { state.dateFrom = e.target.value; render(); });
       el("dateTo").addEventListener("change", e => { state.dateTo = e.target.value; render(); });
