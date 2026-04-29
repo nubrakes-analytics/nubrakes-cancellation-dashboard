@@ -1010,13 +1010,45 @@ function formatPeriodLabel(key) {
   return key;
 }
 
+async function fetchJSONWithTimeout(url, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), {
+      cache:'no-store',
+      signal:controller.signal
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function loadLiveData() {
-  const res = await fetch(DATA_URL + '?t=' + Date.now(), { cache:'no-store' });
-  if (!res.ok) throw new Error(`Live data load failed: ${res.status}`);
-  const json = await res.json();
+  const json = await fetchJSONWithTimeout(DATA_URL);
   const rows = parseLiveJSON(json);
-  if (!rows.length) throw new Error('Live data returned no usable rows');
+  if (!rows.length) throw new Error('No usable rows after normalization. Check field names in the JSON file.');
+  console.log('Loaded cancellation data from:', DATA_URL);
   return rows;
+}
+
+function showFatalError(err) {
+  console.error('Cancellation dashboard failed:', err);
+  document.getElementById('headerMeta').textContent = 'Live data failed to load';
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="card" style="grid-column:1/-1;">
+      <div class="section-label">Live Data Error</div>
+      <div class="metric-value" style="font-size:16px;color:var(--danger);">Dashboard could not load the raw GitHub JSON.</div>
+      <div class="section-sub" style="margin-bottom:0;">
+        Source: ${escapeHtml(DATA_URL)}<br>
+        Error: ${escapeHtml(err?.message || err)}<br>
+        Open DevTools Console for the full error.
+      </div>
+    </div>`;
+  document.getElementById('insightsGrid').innerHTML = '';
 }
 
 // ============================================================
@@ -1095,16 +1127,16 @@ function makeChart(id, config) {
 // ============================================================
 async function init() {
   try {
+    document.getElementById('headerMeta').textContent = 'Loading live cancellation data…';
     allData = await loadLiveData();
     console.log('Cancellation dashboard loaded live rows:', allData.length);
     console.log('Cancellation dashboard sample row:', allData[0]);
-  } catch (err) {
-    console.error('Cancellation live data load failed. Using fallback sample rows.', err);
-    allData = parseTSV(rawTSV);
-  }
 
-  populateFilterOptions();
-  applyFilters();
+    populateFilterOptions();
+    applyFilters();
+  } catch (err) {
+    showFatalError(err);
+  }
 }
 
 function populateFilterOptions() {
@@ -1931,7 +1963,7 @@ function sortTable(tableId, colIdx) {
 // ============================================================
 // BOOTSTRAP
 // ============================================================
-init();
+window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
