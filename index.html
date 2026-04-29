@@ -547,6 +547,31 @@
     font-size:11px;
   }
 
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .app { min-height:100vh; }
+
+  .loading {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    color:var(--text-muted);
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .spinner {
+    width:32px;
+    height:32px;
+    border:3px solid var(--border);
+    border-top:3px solid var(--hq);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+
+  .hidden { display:none !important; }
+
   @media (max-width:1023px) {
     .chart-grid-2,
     .chart-grid-3 { grid-template-columns:1fr; }
@@ -570,6 +595,12 @@
 </head>
 <body>
 
+<div id="loading" class="loading">
+  <div class="spinner"></div>
+  <span>Loading live cancellation data...</span>
+</div>
+
+<div id="app" class="app hidden">
 <div class="header">
   <div class="header-inner">
     <div>
@@ -832,6 +863,7 @@
     </div>
   </div>
 </div>
+</div><!-- /app -->
 
 <script>
 // ============================================================
@@ -956,6 +988,8 @@ function enrichCancellationRow(row) {
 
 function normalizeLiveRow(r) {
   const row = {
+    month: dateOnly(firstVal(r, ['month','Month'], '')),
+    week: dateOnly(firstVal(r, ['week','Week'], '')),
     appointment_date: dateOnly(firstVal(r, ['appointment_date','Appointment Date','appointmentDate','date','Date','Day','day','apt_date','startdate'], '')),
     market: String(firstVal(r, ['market','Market'], 'Unmapped Market')).trim() || 'Unmapped Market',
     jobnumber: String(firstVal(r, ['jobnumber','job_number','jobNumber','Job Number','job','Job'], '')).trim(),
@@ -988,10 +1022,9 @@ function getWeekStart(dateStr) {
 
 function getPeriodKey(row) {
   const d = row.appointment_date || '';
-  if (!d) return 'Unknown';
-  if (periodMode === 'week') return getWeekStart(d);
-  if (periodMode === 'month') return d.slice(0, 7);
-  return d;
+  if (periodMode === 'week') return row.week || getWeekStart(d) || 'Unknown';
+  if (periodMode === 'month') return row.month ? row.month.slice(0, 7) : (d ? d.slice(0, 7) : 'Unknown');
+  return d || 'Unknown';
 }
 
 function getPeriodLabel() {
@@ -1010,25 +1043,16 @@ function formatPeriodLabel(key) {
   return key;
 }
 
-async function fetchJSONWithTimeout(url, timeoutMs = 12000) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), {
-      cache:'no-store',
-      signal:controller.signal
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+async function loadData() {
+  const r = await fetch(DATA_URL + '?t=' + Date.now(), { cache:'no-store' });
+  if (!r.ok) throw new Error(r.status);
+  const d = JSON.parse(await r.text());
+  if (!Array.isArray(d) || !d.length) throw new Error('empty');
+  return d;
 }
 
 async function loadLiveData() {
-  const json = await fetchJSONWithTimeout(DATA_URL);
+  const json = await loadData();
   const rows = parseLiveJSON(json);
   if (!rows.length) throw new Error('No usable rows after normalization. Check field names in the JSON file.');
   console.log('Loaded cancellation data from:', DATA_URL);
@@ -1037,6 +1061,10 @@ async function loadLiveData() {
 
 function showFatalError(err) {
   console.error('Cancellation dashboard failed:', err);
+  const loading = document.getElementById('loading');
+  const app = document.getElementById('app');
+  if (loading) loading.classList.add('hidden');
+  if (app) app.classList.remove('hidden');
   document.getElementById('headerMeta').textContent = 'Live data failed to load';
   document.getElementById('kpiGrid').innerHTML = `
     <div class="card" style="grid-column:1/-1;">
@@ -1127,13 +1155,17 @@ function makeChart(id, config) {
 // ============================================================
 async function init() {
   try {
-    document.getElementById('headerMeta').textContent = 'Loading live cancellation data…';
     allData = await loadLiveData();
     console.log('Cancellation dashboard loaded live rows:', allData.length);
     console.log('Cancellation dashboard sample row:', allData[0]);
 
     populateFilterOptions();
     applyFilters();
+
+    const loading = document.getElementById('loading');
+    const app = document.getElementById('app');
+    if (loading) loading.classList.add('hidden');
+    if (app) app.classList.remove('hidden');
   } catch (err) {
     showFatalError(err);
   }
