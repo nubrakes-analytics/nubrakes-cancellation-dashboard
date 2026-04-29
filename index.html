@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -17,6 +17,7 @@
       --green:#10b981;
       --red:#f43f5e;
       --indigo:#6366f1;
+      --blue:#0ea5e9;
       --amber:#f59e0b;
       --dark:#111827;
       --shadow:0 1px 4px rgba(0,0,0,0.06);
@@ -31,20 +32,21 @@
       font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:var(--bg);
       color:var(--text);
+      font-size:14px;
+      line-height:1.5;
     }
     button, input, select { font:inherit; }
     @keyframes spin { to { transform:rotate(360deg); } }
-
     .hidden { display:none !important; }
+
     .loading {
-      height:100vh;
       display:flex;
       align-items:center;
       justify-content:center;
+      height:100vh;
+      color:var(--muted);
       flex-direction:column;
       gap:12px;
-      color:var(--muted);
-      font-size:13px;
     }
     .spinner {
       width:32px;
@@ -54,21 +56,13 @@
       border-radius:50%;
       animation:spin 1s linear infinite;
     }
-    .app { min-height:100vh; padding:20px 16px 24px; }
-    .container { max-width:1240px; margin:0 auto; }
 
+    .app { min-height:100vh; padding:20px 16px 28px; }
+    .container { max-width:1240px; margin:0 auto; }
     .header { margin-bottom:20px; }
-    .header-row {
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:16px;
-      flex-wrap:wrap;
-    }
     .title { margin:0; font-size:20px; font-weight:700; }
     .subtitle { margin:3px 0 0; font-size:12px; color:var(--muted); }
     .status-row { display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
-
     .badge {
       display:inline-flex;
       align-items:center;
@@ -84,9 +78,7 @@
     .badge.live .badge-dot { background:#10b981; }
     .badge.error { background:#fff1f2; border-color:#fecdd3; color:#be123c; }
     .badge.error .badge-dot { background:#f43f5e; }
-    .badge.hq { background:#eef2ff; border-color:#c7d2fe; color:#4338ca; }
-    .badge.customer { background:#fff7ed; border-color:#fed7aa; color:#c2410c; }
-    .badge.other { background:#f8fafc; border-color:#e5e7eb; color:#64748b; }
+    .small-muted { font-size:10px; color:var(--soft); }
 
     .controls, .toolbar {
       display:flex;
@@ -95,7 +87,7 @@
       flex-wrap:wrap;
       align-items:center;
     }
-    .period-btn, .toggle-btn {
+    .period-btn, .metric-pill, .btn-reset, .btn-export {
       padding:6px 16px;
       border-radius:20px;
       border:none;
@@ -106,33 +98,8 @@
       color:var(--muted);
       box-shadow:0 1px 3px rgba(0,0,0,0.08);
     }
-    .period-btn.active, .toggle-btn.active {
-      background:var(--dark);
-      color:#fff;
-      box-shadow:none;
-    }
-    .toggle-wrap {
-      display:flex;
-      gap:4px;
-      background:#f1f5f9;
-      border-radius:8px;
-      padding:3px;
-      flex-wrap:wrap;
-    }
-    .toggle-wrap .toggle-btn {
-      box-shadow:none;
-      background:transparent;
-      color:var(--soft);
-      border-radius:6px;
-      padding:5px 12px;
-    }
-    .toggle-wrap .toggle-btn.active {
-      background:#fff;
-      color:var(--text);
-      box-shadow:0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .select, .input {
+    .period-btn.active { background:var(--dark); color:#fff; box-shadow:none; }
+    .select, .search-box, input[type="date"] {
       padding:9px 12px;
       border-radius:8px;
       border:1.5px solid var(--border);
@@ -144,7 +111,22 @@
       max-width:100%;
       outline:none;
     }
-    .input { cursor:text; }
+    .select:focus, .search-box:focus, input[type="date"]:focus { border-color:var(--indigo); }
+
+    .tabs { display:flex; margin-bottom:22px; border-bottom:1.5px solid var(--border); overflow-x:auto; }
+    .tab-btn {
+      padding:8px 20px;
+      border:none;
+      background:none;
+      font-size:13px;
+      font-weight:600;
+      cursor:pointer;
+      color:var(--soft);
+      border-bottom:2px solid transparent;
+      margin-bottom:-1.5px;
+      white-space:nowrap;
+    }
+    .tab-btn.active { color:var(--text); border-bottom-color:var(--text); }
 
     .card {
       background:var(--card);
@@ -154,20 +136,8 @@
       border:1px solid var(--border-soft);
     }
     .card.tight { padding:14px 16px; }
-    .section-grid {
-      display:grid;
-      gap:12px;
-      margin-bottom:20px;
-      grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
-    }
-    .split-grid {
-      display:grid;
-      gap:16px;
-      margin-bottom:16px;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-    }
-    .wide { grid-column:1/-1; }
-
+    .section-grid { display:grid; gap:12px; margin-bottom:20px; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); }
+    .split-grid { display:grid; gap:16px; margin-bottom:16px; grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .section-label {
       font-size:10px;
       font-weight:600;
@@ -176,60 +146,42 @@
       letter-spacing:0.05em;
       margin-bottom:5px;
     }
-    .metric-value {
-      font-size:22px;
-      font-weight:700;
-      color:var(--text);
-      margin-bottom:4px;
-    }
-    .small-muted { font-size:11px; color:var(--soft); }
-    .small-strong { font-size:12px; font-weight:700; color:var(--muted); }
+    .metric-value { font-size:22px; font-weight:700; color:var(--text); margin-bottom:8px; }
+    .metric-row { display:flex; justify-content:space-between; align-items:flex-end; gap:8px; }
+    .delta-chip { font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; white-space:nowrap; }
+    .delta-chip.good { color:var(--green); background:#ecfdf5; }
+    .delta-chip.bad { color:var(--red); background:#fff1f2; }
 
-    .chart-head {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:12px;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .chart-title { font-size:13px; font-weight:700; color:var(--text); }
-    .chart-sub { font-size:12px; color:var(--muted); margin-top:2px; }
-    .chart-wrap { position:relative; min-height:260px; }
-    .chart-wrap.short { min-height:220px; }
-    .chart-wrap.tall { min-height:320px; }
-
-    .insights-grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-      gap:8px;
-    }
-    .insight-item {
-      background:#f8fafc;
-      border:1px solid var(--border-soft);
-      border-radius:10px;
-      padding:10px 12px;
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
+    .toggle-wrap { display:flex; gap:4px; background:#f1f5f9; border-radius:8px; padding:3px; flex-wrap:wrap; }
+    .toggle-btn {
+      padding:5px 12px;
+      border-radius:6px;
+      border:none;
       font-size:12px;
-      color:var(--muted);
-      line-height:1.45;
+      font-weight:600;
+      cursor:pointer;
+      background:transparent;
+      color:var(--soft);
     }
-    .insight-dot { width:8px; height:8px; border-radius:999px; margin-top:5px; flex:0 0 auto; }
-    .insight-dot.hq { background:var(--indigo); }
-    .insight-dot.customer { background:var(--amber); }
-    .insight-dot.neutral { background:#64748b; }
-    .insight-item strong { color:var(--text); }
+    .toggle-btn.active { background:#fff; color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,0.1); }
 
-    .table-toolbar {
-      display:flex;
-      gap:10px;
-      justify-content:space-between;
-      align-items:center;
-      flex-wrap:wrap;
-      margin-bottom:12px;
-    }
+    .chart-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px; flex-wrap:wrap; }
+    .chart-wrap { position:relative; min-height:280px; }
+    .chart-wrap.small { min-height:220px; }
+    .chart-wrap canvas { max-height:360px; }
+    .legend-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); font-weight:600; }
+    .legend-dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+
+    .insights-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px; }
+    .insight-card { background:#f8fafc; border-radius:10px; padding:10px 12px; border:1px solid var(--border-soft); }
+    .insight-title { font-size:12px; font-weight:700; margin-bottom:4px; color:var(--text); }
+    .insight-text { font-size:12px; color:var(--muted); }
+
+    .table-toolbar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .search-box { width:260px; }
+    .btn-export { background:var(--dark); color:#fff; box-shadow:none; }
+    .btn-reset { border:1.5px solid var(--border); box-shadow:none; }
     .table-wrap { overflow-x:auto; }
     table { width:100%; border-collapse:collapse; font-size:12px; }
     th {
@@ -246,38 +198,29 @@
       white-space:nowrap;
       user-select:none;
     }
-    td { padding:9px 10px; border-bottom:1px solid var(--border-soft); vertical-align:top; }
+    td { padding:9px 10px; border-bottom:1px solid var(--border-soft); color:var(--text); vertical-align:top; white-space:nowrap; }
     tr:hover td { background:#f8fafc; }
-    .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:11px; }
-    .link-cell a { color:var(--indigo); text-decoration:none; font-weight:600; }
+    .type-badge { display:inline-flex; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid; }
+    .type-badge.hq { color:#4338ca; background:#eef2ff; border-color:#c7d2fe; }
+    .type-badge.customer { color:#c2410c; background:#fff7ed; border-color:#fed7aa; }
+    .type-badge.other { color:#64748b; background:#f8fafc; border-color:#e5e7eb; }
+    .link-cell a { color:var(--indigo); text-decoration:none; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:11px; font-weight:600; }
     .link-cell a:hover { text-decoration:underline; }
-    .pager { display:flex; gap:8px; align-items:center; margin-top:12px; font-size:12px; color:var(--muted); }
-    .pager button, .btn {
-      padding:6px 12px;
-      border-radius:20px;
-      border:1.5px solid var(--border);
-      background:#fff;
-      font-size:12px;
-      font-weight:600;
-      cursor:pointer;
-      color:var(--muted);
-    }
-    .btn.dark { background:var(--dark); color:#fff; border-color:var(--dark); }
+    .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:11px; }
+    .pager { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:var(--muted); }
+    .pager button { padding:5px 12px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font-size:12px; font-weight:600; cursor:pointer; color:var(--muted); }
     .pager button:disabled { opacity:.4; cursor:default; }
-    .empty-state { padding:28px 16px; text-align:center; color:var(--muted); font-size:13px; }
-    .test-panel { margin-top:16px; }
-    .test-pass { color:#065f46; }
-    .test-fail { color:#be123c; }
 
-    @media (max-width:1023px){ .split-grid { grid-template-columns:1fr; } }
-    @media (max-width:639px){
+    .empty-state { padding:32px 16px; text-align:center; color:var(--muted); font-size:13px; }
+    .debug-box { margin-top:16px; padding:12px; border-radius:10px; background:#f8fafc; border:1px solid var(--border); font-size:12px; color:var(--muted); overflow:auto; }
+
+    @media (max-width:1023px) { .split-grid { grid-template-columns:1fr; } }
+    @media (max-width:639px) {
       .app { padding:12px; }
       .title { font-size:18px; }
-      .controls { align-items:stretch; }
-      .select, .input { min-width:100%; width:100%; }
+      .controls, .toolbar, .table-toolbar { align-items:stretch; }
+      .select, input[type="date"], .search-box { min-width:100%; width:100%; }
       .section-grid { grid-template-columns:1fr; }
-      .table-toolbar { align-items:stretch; }
-      .btn { width:100%; }
     }
   </style>
 </head>
@@ -290,19 +233,14 @@
   <div id="app" class="app hidden">
     <div class="container">
       <div class="header">
-        <div class="header-row">
-          <div>
-            <h1 class="title">NuBrakes Cancellation Dashboard</h1>
-            <p id="subtitle" class="subtitle">Live cancellation analysis</p>
-            <div class="status-row">
-              <div id="dataBadge" class="badge live"><div class="badge-dot"></div><span id="dataBadgeText">Live Data</span></div>
-              <span id="rowCount" class="small-muted"></span>
-            </div>
+        <h1 class="title">NuBrakes Cancellation Dashboard</h1>
+        <p id="subtitle" class="subtitle"></p>
+        <div class="status-row">
+          <div id="dataBadge" class="badge live">
+            <div class="badge-dot"></div>
+            <span id="dataBadgeText">Live Data</span>
           </div>
-          <div class="toggle-wrap">
-            <button class="toggle-btn active" data-view-mode="count">Raw Count</button>
-            <button class="toggle-btn" data-view-mode="pct">% Share</button>
-          </div>
+          <span id="dataNote" class="small-muted"></span>
         </div>
       </div>
 
@@ -310,776 +248,676 @@
         <button class="period-btn active" data-period="day">Day</button>
         <button class="period-btn" data-period="week">Week</button>
         <button class="period-btn" data-period="month">Month</button>
-        <input id="dateFrom" class="input" type="date" />
-        <input id="dateTo" class="input" type="date" />
+
         <select id="marketSelect" class="select"></select>
         <select id="typeSelect" class="select"></select>
         <select id="reasonSelect" class="select"></select>
         <select id="categorySelect" class="select"></select>
-        <select id="statusSelect" class="select"></select>
         <select id="techSelect" class="select"></select>
-        <select id="origTechSelect" class="select"></select>
-        <select id="timingSelect" class="select"></select>
         <select id="withdrawalSelect" class="select"></select>
-        <button id="resetBtn" class="btn">Reset</button>
+        <input type="date" id="dateFrom" />
+        <input type="date" id="dateTo" />
+        <button class="btn-reset" id="resetBtn">Reset</button>
       </div>
 
-      <div id="kpiGrid" class="section-grid"></div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="trends">Trends</button>
+        <button class="tab-btn" data-tab="details">Details</button>
+        <button class="tab-btn" data-tab="debug">Debug</button>
+      </div>
 
-      <div class="card" style="margin-bottom:16px;">
-        <div class="chart-head">
-          <div>
-            <div class="chart-title">Auto Insights</div>
-            <div class="chart-sub">Rule-based insights from the current filters</div>
+      <div id="overviewTab">
+        <div id="kpiGrid" class="section-grid"></div>
+        <div class="split-grid">
+          <div class="card">
+            <div class="chart-head">
+              <div>
+                <div class="section-label">Auto Insights</div>
+                <div class="subtitle" style="margin:0;">Rule-based summary from the active filters</div>
+              </div>
+            </div>
+            <div id="insightsGrid" class="insights-grid"></div>
+          </div>
+          <div class="card">
+            <div class="chart-head">
+              <div>
+                <div id="mixChartTitle" class="section-label">Cancellation Mix</div>
+                <div class="subtitle" style="margin:0;">HQ vs Customer vs Other</div>
+              </div>
+              <div class="toggle-wrap" id="mixViewToggle">
+                <button class="toggle-btn active" data-mix-view="count">Count</button>
+                <button class="toggle-btn" data-mix-view="share">% Share</button>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="mixChart"></canvas></div>
           </div>
         </div>
-        <div id="insightsGrid" class="insights-grid"></div>
-      </div>
 
-      <div class="card" style="margin-bottom:16px;">
-        <div class="chart-head">
-          <div>
-            <div class="chart-title">Cancellation Mix Trend</div>
-            <div id="trendSub" class="chart-sub">HQ vs Customer cancellations over time</div>
+        <div class="split-grid">
+          <div class="card">
+            <div class="chart-head"><div class="section-label">HQ Reasons</div></div>
+            <div class="chart-wrap"><canvas id="hqReasonsChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="chart-head"><div class="section-label">Customer Reasons</div></div>
+            <div class="chart-wrap"><canvas id="customerReasonsChart"></canvas></div>
           </div>
         </div>
-        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
       </div>
 
-      <div class="split-grid">
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">HQ Cancellation Reasons</div><div class="chart-sub">Operational drivers</div></div></div>
-          <div class="chart-wrap tall"><canvas id="hqReasonChart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">HQ Cancellation Categories</div><div class="chart-sub">Grouped themes</div></div></div>
-          <div class="chart-wrap tall"><canvas id="hqCategoryChart"></canvas></div>
-        </div>
-      </div>
-
-      <div class="split-grid">
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">Customer Cancellation Reasons</div><div class="chart-sub">Demand and customer behavior signals</div></div></div>
-          <div class="chart-wrap tall"><canvas id="customerReasonChart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">Customer Cancellation Categories</div><div class="chart-sub">Grouped customer themes</div></div></div>
-          <div class="chart-wrap tall"><canvas id="customerCategoryChart"></canvas></div>
-        </div>
-      </div>
-
-      <div class="split-grid">
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">Market HQ Breakdown</div><div class="chart-sub">Markets driving HQ cancellations</div></div></div>
-          <div class="chart-wrap"><canvas id="marketChart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">Price Too High Trend</div><div class="chart-sub">Pricing signal over selected period</div></div></div>
-          <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
-        </div>
-      </div>
-
-      <div class="split-grid">
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">Cancellation Timing Buckets</div><div class="chart-sub">Split by HQ vs Customer</div></div></div>
-          <div class="chart-wrap short"><canvas id="timingChart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="chart-head"><div><div class="chart-title">Reschedule vs True Withdrawal</div><div class="chart-sub">Gross vs true lost demand signal</div></div></div>
-          <div class="chart-wrap short"><canvas id="withdrawalChart"></canvas></div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:16px;">
-        <div class="chart-head">
-          <div>
-            <div class="chart-title">Technician HQ Cancellation View</div>
-            <div class="chart-sub">Assigned or original technician view</div>
+      <div id="trendsTab" class="hidden">
+        <div class="toolbar">
+          <div class="toggle-wrap" id="trendMetricToggle">
+            <button class="toggle-btn active" data-trend-metric="total">Total</button>
+            <button class="toggle-btn" data-trend-metric="hq">HQ</button>
+            <button class="toggle-btn" data-trend-metric="customer">Customer</button>
+            <button class="toggle-btn" data-trend-metric="price">Price Too High</button>
+            <button class="toggle-btn" data-trend-metric="reschedule">Reschedules</button>
           </div>
-          <div class="toggle-wrap">
-            <button class="toggle-btn active" data-tech-mode="assigned">Assigned Tech</button>
-            <button class="toggle-btn" data-tech-mode="original">Original Tech</button>
+          <div class="toggle-wrap" id="trendChartToggle">
+            <button class="toggle-btn active" data-chart-type="bar">Bar</button>
+            <button class="toggle-btn" data-chart-type="line">Line</button>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Technician</th><th>Total</th><th>HQ</th><th>Customer</th><th>HQ%</th><th>Top HQ Reason</th><th>Top HQ Category</th></tr></thead>
-            <tbody id="techTableBody"></tbody>
-          </table>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="chart-head">
+            <div id="trendTitle" class="section-label">Trend</div>
+            <div id="trendLegend" class="legend-row"></div>
+          </div>
+          <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="chart-head">
-          <div>
-            <div class="chart-title">Detailed Cancellation Table</div>
-            <div class="chart-sub">All cancellation rows matching current filters</div>
+        <div class="split-grid">
+          <div class="card">
+            <div class="chart-head"><div class="section-label">Timing Bucket Split</div></div>
+            <div class="chart-wrap small"><canvas id="timingChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="chart-head"><div class="section-label">Reschedule vs True Withdrawal</div></div>
+            <div class="chart-wrap small"><canvas id="withdrawalChart"></canvas></div>
           </div>
         </div>
-        <div class="table-toolbar">
-          <input id="tableSearch" class="input" placeholder="Search jobs, techs, markets..." />
-          <button id="exportBtn" class="btn dark">Export CSV</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th data-sort="appointment_date">Date</th>
-              <th data-sort="market">Market</th>
-              <th data-sort="jobnumber">Job #</th>
-              <th data-sort="tech_name">Tech</th>
-              <th data-sort="original_technician">Orig Tech</th>
-              <th data-sort="_type">Type</th>
-              <th data-sort="_reason">Reason</th>
-              <th data-sort="_category">Category</th>
-              <th data-sort="status">Status</th>
-              <th data-sort="_timingBucket">Timing</th>
-              <th data-sort="cancelation_time_frame_hours">Hrs</th>
-              <th>Withdrawn</th>
-              <th>Created</th>
-            </tr></thead>
-            <tbody id="detailTableBody"></tbody>
-          </table>
-        </div>
-        <div class="pager">
-          <button id="prevBtn">← Prev</button>
-          <span id="pageInfo"></span>
-          <button id="nextBtn">Next →</button>
+      </div>
+
+      <div id="detailsTab" class="hidden">
+        <div class="card">
+          <div class="table-toolbar">
+            <input class="search-box" type="text" id="tableSearch" placeholder="Search jobs, techs, markets…" />
+            <button class="btn-export" id="exportBtn">Export CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="appointment_date">Date</th>
+                  <th data-sort="market">Market</th>
+                  <th data-sort="jobnumber">Job #</th>
+                  <th data-sort="tech_name">Tech</th>
+                  <th data-sort="original_technician">Orig Tech</th>
+                  <th data-sort="_type">Type</th>
+                  <th data-sort="_reason">Reason</th>
+                  <th data-sort="_category">Category</th>
+                  <th data-sort="status">Status</th>
+                  <th data-sort="_timingBucket">Timing</th>
+                  <th data-sort="cancelation_time_frame_hours">Hrs</th>
+                  <th>Withdrawn</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="detailTableBody"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button id="prevBtn">← Prev</button>
+            <span id="pageInfo"></span>
+            <button id="nextBtn">Next →</button>
+          </div>
         </div>
       </div>
 
-      <div id="testPanel" class="card test-panel hidden"></div>
+      <div id="debugTab" class="hidden">
+        <div class="card">
+          <div class="section-label">Debug / Data Validation</div>
+          <div id="debugOutput" class="debug-box"></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
     const DATA_URL = "https://raw.githubusercontent.com/nubrakes-analytics/NuBrakes-Copilot/main/data/fact_nubrakes_cancellation_daily.json";
-    const PAGE_SIZE = 20;
-    const TIMING_BUCKETS = ['0–24 hrs', '25–48 hrs', '49–72 hrs', '73–120 hrs', '121+ hrs', 'Unknown'];
 
     const HQ_CATEGORIES = {
-      'HQ: Part availability': 'Parts Issue',
-      'HQ: Incorrect parts': 'Parts Issue',
-      'HQ: Technician could not complete service': 'Technician / Labor Issue',
-      'HQ: Technician availability': 'Technician / Labor Issue',
-      'HQ: Did not arrive within the service window': 'Technician / Labor Issue',
-      'HQ: Overbooked Time Slot': 'Scheduling / Capacity Issue',
-      'HQ: Schedule Optimization (Unserved)': 'Scheduling / Capacity Issue',
-      'HQ: VIOC Inspection Scheduling': 'Scheduling / Capacity Issue',
-      'HQ: Drive time too long': 'Route / Location Issue',
-      'HQ: Weather': 'Weather / External Issue',
-      'HQ: Margin Alert': 'Margin / Profitability Issue'
+      "HQ: Part availability": "Parts Issue",
+      "HQ: Incorrect parts": "Parts Issue",
+      "HQ: Technician could not complete service": "Technician / Labor Issue",
+      "HQ: Technician availability": "Technician / Labor Issue",
+      "HQ: Did not arrive within the service window": "Technician / Labor Issue",
+      "HQ: Overbooked Time Slot": "Scheduling / Capacity Issue",
+      "HQ: Schedule Optimization (Unserved)": "Scheduling / Capacity Issue",
+      "HQ: VIOC Inspection Scheduling": "Scheduling / Capacity Issue",
+      "HQ: Drive time too long": "Route / Location Issue",
+      "HQ: Weather": "Weather / External Issue",
+      "HQ: Margin Alert": "Margin / Profitability Issue"
     };
 
-    const CUSTOMER_CATEGORIES = {
-      'Customer: Price too high': 'Price / Payment Issue',
-      'Customer: Refuses to pay': 'Price / Payment Issue',
-      'Customer: Schedule conflict': 'Scheduling Issue',
-      'Customer: Rebooked for another time': 'Scheduling Issue',
-      'Customer: Not available during service window': 'Scheduling Issue',
-      'Customer: No show or no response': 'Customer Unresponsive',
-      'Customer: Did not provide reason': 'Customer Unresponsive',
-      'Customer: Decided on alternative option': 'Customer Chose Alternative',
-      'Customer: Could not access vehicle': 'Missing Information / Access Issue',
-      'Customer: Did not provide VIN or LP': 'Missing Information / Access Issue'
+    const CUST_CATEGORIES = {
+      "Customer: Price too high": "Price / Payment Issue",
+      "Customer: Refuses to pay": "Price / Payment Issue",
+      "Customer: Schedule conflict": "Scheduling Issue",
+      "Customer: Rebooked for another time": "Scheduling Issue",
+      "Customer: Not available during service window": "Scheduling Issue",
+      "Customer: No show or no response": "Customer Unresponsive",
+      "Customer: Did not provide reason": "Customer Unresponsive",
+      "Customer: Decided on alternative option": "Customer Chose Alternative",
+      "Customer: Could not access vehicle": "Missing Information / Access Issue",
+      "Customer: Did not provide VIN or LP": "Missing Information / Access Issue"
     };
+
+    const TIMING_BUCKETS = ["0–24 hrs", "25–48 hrs", "49–72 hrs", "73–120 hrs", "121+ hrs", "Unknown"];
+    const COLORS = { hq:"#6366f1", customer:"#f59e0b", other:"#94a3b8", red:"#f43f5e", green:"#10b981", blue:"#0ea5e9" };
+    const PAGE_SIZE = 25;
 
     const state = {
-      rawData: [],
-      filteredData: [],
-      period: 'day',
-      viewMode: 'count',
-      techMode: 'assigned',
-      detailPage: 1,
-      detailSort: { key: 'appointment_date', asc: false },
-      charts: {}
+      rawRows: [],
+      rows: [],
+      filtered: [],
+      period: "day",
+      tab: "overview",
+      mixView: "count",
+      trendMetric: "total",
+      trendChartType: "bar",
+      market: "All Markets",
+      type: "All Types",
+      reason: "All Reasons",
+      category: "All Categories",
+      tech: "All Technicians",
+      withdrawal: "All Withdrawal Types",
+      dateFrom: "",
+      dateTo: "",
+      tableSearch: "",
+      page: 1,
+      sortKey: "appointment_date",
+      sortAsc: false,
+      loadError: null,
+      testResults: []
     };
 
-    const $ = id => document.getElementById(id);
+    const charts = {};
 
-    function escapeHtml(str){
-      return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-    }
-
-    function firstVal(obj, keys, fallback=''){
-      for(const key of keys){
-        if(obj && obj[key] !== undefined && obj[key] !== null && String(obj[key]).trim() !== '') return obj[key];
+    function el(id){ return document.getElementById(id); }
+    function safe(v){ return String(v ?? "").replace(/[&<>"']/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
+    function num(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+    function fmt(v){ return Math.round(num(v)).toLocaleString(); }
+    function pct(part,total){ return total ? ((part/total)*100).toFixed(1)+"%" : "0%"; }
+    function pctNum(part,total){ return total ? +(((part/total)*100).toFixed(1)) : 0; }
+    function firstVal(obj, keys, fallback=""){
+      for(const k of keys){
+        if(obj && obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== "") return obj[k];
       }
       return fallback;
     }
-
-    function dateOnly(value){
-      if(!value) return '';
-      const s = String(value).trim();
-      if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    function toDateOnly(v){
+      if(!v) return "";
+      const s = String(v).trim();
+      if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
       const d = new Date(s);
-      if(Number.isNaN(d.getTime())) return s.slice(0, 10);
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if(Number.isNaN(d.getTime())) return s.slice(0,10);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     }
-
-    function getWeekStart(dateStr){
-      const d = new Date(dateStr + 'T12:00:00');
-      if(Number.isNaN(d.getTime())) return '';
+    function weekStartFromDate(dateStr){
+      const d = new Date(dateStr + "T12:00:00");
+      if(Number.isNaN(d.getTime())) return "";
       const day = d.getDay();
       const diff = day === 0 ? -6 : 1 - day;
       d.setDate(d.getDate() + diff);
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     }
-
     function timingBucket(hours){
-      const h = Number(hours);
-      if(Number.isNaN(h)) return 'Unknown';
-      if(h <= 24) return '0–24 hrs';
-      if(h <= 48) return '25–48 hrs';
-      if(h <= 72) return '49–72 hrs';
-      if(h <= 120) return '73–120 hrs';
-      return '121+ hrs';
+      const h = parseFloat(hours);
+      if(!Number.isFinite(h)) return "Unknown";
+      if(h <= 24) return "0–24 hrs";
+      if(h <= 48) return "25–48 hrs";
+      if(h <= 72) return "49–72 hrs";
+      if(h <= 120) return "73–120 hrs";
+      return "121+ hrs";
     }
+    function classifyType(reason){
+      if(String(reason).startsWith("HQ:")) return "HQ";
+      if(String(reason).startsWith("Customer:")) return "Customer";
+      return "Other";
+    }
+    function cleanReason(reason){
+      const s = String(reason || "");
+      if(s.startsWith("HQ:")) return s.slice(3).trim();
+      if(s.startsWith("Customer:")) return s.slice(9).trim();
+      return s || "Unspecified";
+    }
+    function categoryFor(reason){ return HQ_CATEGORIES[reason] || CUST_CATEGORIES[reason] || "Uncategorized"; }
 
     function normalizeRow(r){
-      const appointmentDate = dateOnly(firstVal(r, ['appointment_date','Appointment Date','appointmentDate','date','Date','Day','day','apt_date','startdate'], ''));
-      const reason = String(firstVal(r, ['cancelation reason','cancelation_reason','cancellation_reason','Cancelation Reason','Cancellation Reason','reason','Reason'], '')).trim();
-      const type = reason.startsWith('HQ:') ? 'HQ' : reason.startsWith('Customer:') ? 'Customer' : 'Other';
-      const category = HQ_CATEGORIES[reason] || CUSTOMER_CATEGORIES[reason] || 'Uncategorized';
-      const status = String(firstVal(r, ['status','Status'], '')).trim();
-      const isReschedule = status.toLowerCase().includes('reschedule');
+      const appointmentDate = toDateOnly(firstVal(r, ["appointment_date", "appointmentDate", "Appointment Date", "date", "Date", "day", "Day", "apt_date"]));
+      const month = toDateOnly(firstVal(r, ["month", "Month"])) || (appointmentDate ? appointmentDate.slice(0,7) + "-01" : "");
+      const week = toDateOnly(firstVal(r, ["week", "Week"])) || weekStartFromDate(appointmentDate);
+      const reason = String(firstVal(r, ["cancelation reason", "cancelation_reason", "cancellation_reason", "Cancelation Reason", "Cancellation Reason", "reason", "Reason"], "")).trim();
+      const status = String(firstVal(r, ["status", "Status"], "")).trim();
+      const type = classifyType(reason);
+      const isReschedule = /reschedule/i.test(status);
+      const link = String(firstVal(r, ["link", "LINK", "url", "URL"], "")).trim();
 
       return {
-        month: dateOnly(firstVal(r, ['month','Month'], '')) || (appointmentDate ? appointmentDate.slice(0,7) + '-01' : ''),
-        week: dateOnly(firstVal(r, ['week','Week'], '')) || getWeekStart(appointmentDate),
+        month,
+        week,
         appointment_date: appointmentDate,
-        market: String(firstVal(r, ['market','Market'], 'Unmapped Market')).trim() || 'Unmapped Market',
-        jobnumber: String(firstVal(r, ['jobnumber','job_number','jobNumber','Job Number','job','Job'], '')).trim(),
-        tech_name: String(firstVal(r, ['tech_name','technician','Technician','assigned_technician','assignedTechnician','tech'], '')).trim(),
-        'cancelation reason': reason,
-        'withdrawn date': dateOnly(firstVal(r, ['withdrawn date','withdrawn_date','withdrawDate','Withdrawn Date','withdrawnat','withdrawnAt'], '')),
-        status,
-        cancelation_time_frame_hours: String(firstVal(r, ['cancelation_time_frame_hours','cancellation_time_frame_hours','Cancelation_Time_Frame_hours','cancellationTimeFrameHours'], '')).trim(),
-        withdrawextrainfo: String(firstVal(r, ['withdrawextrainfo','withdraw_extra_info','withdrawExtraInfo','extra_info'], '')).trim(),
-        link: String(firstVal(r, ['link','LINK','url','URL'], '')).trim(),
-        original_technician: String(firstVal(r, ['original_technician','Original Technician','originalTechnician','original_tech'], '')).trim(),
-        appointment_create_date: dateOnly(firstVal(r, ['appointment_create_date','appointmentCreatedDate','createdat','createdAt','Created Date'], '')),
+        market: String(firstVal(r, ["market", "Market"], "Unmapped Market")).trim() || "Unmapped Market",
+        jobnumber: String(firstVal(r, ["jobnumber", "job_number", "jobNumber", "Job Number"], "")).trim(),
+        tech_name: String(firstVal(r, ["tech_name", "technician", "Technician", "assigned_technician", "assignedTechnician", "tech"], "")).trim() || "Unassigned",
+        original_technician: String(firstVal(r, ["original_technician", "Original Technician", "originalTechnician", "original_tech"], "")).trim() || "Unassigned",
+        full_reason: reason || "Unspecified",
+        status: status || "Unspecified",
+        cancelation_time_frame_hours: num(firstVal(r, ["cancelation_time_frame_hours", "cancellation_time_frame_hours", "Cancelation_Time_Frame_hours", "cancellationTimeFrameHours"], 0)),
+        withdrawn_date: toDateOnly(firstVal(r, ["withdrawn date", "withdrawn_date", "withdrawDate", "Withdrawn Date", "withdrawnat", "withdrawnAt"])),
+        appointment_create_date: toDateOnly(firstVal(r, ["appointment_create_date", "appointmentCreatedDate", "createdat", "createdAt", "Created Date"])),
+        withdrawextrainfo: String(firstVal(r, ["withdrawextrainfo", "withdraw_extra_info", "withdrawExtraInfo", "extra_info"], "")).trim(),
+        link,
         _type: type,
-        _reason: reason.startsWith('HQ:') ? reason.slice(3).trim() : reason.startsWith('Customer:') ? reason.slice(9).trim() : reason,
-        _category: category,
-        _fullReason: reason,
+        _reason: cleanReason(reason),
+        _category: categoryFor(reason),
         _isReschedule: isReschedule,
-        _withdrawalType: isReschedule ? 'Reschedule' : 'True Withdrawal',
-        _timingBucket: timingBucket(firstVal(r, ['cancelation_time_frame_hours','cancellation_time_frame_hours','Cancelation_Time_Frame_hours','cancellationTimeFrameHours'], ''))
+        _withdrawalType: isReschedule ? "Reschedule" : "True Withdrawal",
+        _timingBucket: timingBucket(firstVal(r, ["cancelation_time_frame_hours", "cancellation_time_frame_hours", "Cancelation_Time_Frame_hours", "cancellationTimeFrameHours"], 0))
       };
-    }
-
-    function parseLiveJSON(data){
-      const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
-      return arr.map(normalizeRow).filter(r => r.appointment_date || r.jobnumber || r._fullReason);
-    }
-
-    async function loadData(){
-      const response = await fetch(DATA_URL + '?t=' + Date.now(), { cache:'no-store' });
-      if(!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if(!Array.isArray(data) || data.length === 0) throw new Error('JSON is empty or not an array');
-      return parseLiveJSON(data);
     }
 
     function getPeriodKey(row, period = state.period){
-      if(period === 'week') return row.week || getWeekStart(row.appointment_date) || 'Unknown';
-      if(period === 'month') return row.month ? row.month.slice(0, 7) : (row.appointment_date ? row.appointment_date.slice(0, 7) : 'Unknown');
-      return row.appointment_date || 'Unknown';
+      if(period === "week") return row.week || weekStartFromDate(row.appointment_date) || "Unknown";
+      if(period === "month") return row.month ? row.month.slice(0,7) : (row.appointment_date ? row.appointment_date.slice(0,7) : "Unknown");
+      return row.appointment_date || "Unknown";
     }
-
-    function formatPeriodLabel(key){
-      if(!key || key === 'Unknown') return 'Unknown';
-      if(state.period === 'month'){
-        const d = new Date(key + '-01T12:00:00');
-        return Number.isNaN(d.getTime()) ? key : d.toLocaleDateString('en-US', { month:'short', year:'numeric' });
+    function formatPeriodLabel(label, period = state.period){
+      if(!label || label === "Unknown") return "Unknown";
+      if(period === "month"){
+        const d = new Date(label + "-01T12:00:00");
+        return Number.isNaN(d.getTime()) ? label : d.toLocaleDateString("en-US", { month:"short", year:"numeric" });
       }
-      if(state.period === 'week') return 'Wk ' + key;
-      return key;
+      if(period === "week") return "Wk " + label;
+      const d = new Date(label + "T12:00:00");
+      return Number.isNaN(d.getTime()) ? label : d.toLocaleDateString("en-US", { month:"short", day:"numeric" });
     }
 
-    function groupCount(rows, fn){
-      const out = {};
-      rows.forEach(row => {
-        const key = fn(row) || 'Unknown';
-        out[key] = (out[key] || 0) + 1;
+    function groupCount(rows, keyFn){
+      const out = new Map();
+      rows.forEach(r => {
+        const key = keyFn(r) || "Unknown";
+        out.set(key, (out.get(key) || 0) + 1);
       });
-      return out;
+      return [...out.entries()].sort((a,b) => b[1]-a[1]);
+    }
+    function topItem(rows, keyFn){ return groupCount(rows, keyFn)[0]?.[0] || "—"; }
+    function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+    function makeChart(id, config){
+      destroyChart(id);
+      const canvas = el(id);
+      if(!canvas || typeof Chart === "undefined") return;
+      charts[id] = new Chart(canvas, config);
     }
 
-    function sortedEntries(obj){ return Object.entries(obj).sort((a,b) => b[1] - a[1]); }
-    function topKey(obj){ return sortedEntries(obj)[0]?.[0] || '—'; }
-    function pct(n,total){ return total ? ((n/total)*100).toFixed(1) + '%' : '0%'; }
-    function pctNum(n,total){ return total ? Number(((n/total)*100).toFixed(1)) : 0; }
-    function fmt(n){ return Number(n || 0).toLocaleString(); }
-
-    function setStatus(type, text){
-      const badge = $('dataBadge');
-      badge.className = 'badge ' + type;
-      $('dataBadgeText').textContent = text;
+    async function loadData(){
+      const res = await fetch(DATA_URL + "?t=" + Date.now(), { cache:"no-store" });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      if(!Array.isArray(json)) throw new Error("Expected JSON array but received " + typeof json);
+      if(!json.length) throw new Error("JSON array is empty");
+      return json;
     }
 
+    function runTests(){
+      const tests = [];
+      function test(name, fn){
+        try { fn(); tests.push({ name, pass:true }); }
+        catch(err){ tests.push({ name, pass:false, error:err.message }); }
+      }
+      function assert(cond, msg){ if(!cond) throw new Error(msg); }
+
+      test("dateOnly keeps YYYY-MM-DD from timestamp", () => assert(toDateOnly("2026-04-28 00:00:00") === "2026-04-28", "date parse failed"));
+      test("HQ reason classifies as HQ", () => assert(classifyType("HQ: Part availability") === "HQ", "HQ classify failed"));
+      test("Customer reason classifies as Customer", () => assert(classifyType("Customer: Price too high") === "Customer", "Customer classify failed"));
+      test("Timing 124 maps to 121+ hrs", () => assert(timingBucket(124) === "121+ hrs", "timing bucket failed"));
+      test("Normalizer maps sample row", () => {
+        const row = normalizeRow({ month:"2026-04-01 00:00:00", week:"2026-04-27 00:00:00", appointment_date:"2026-04-28 00:00:00", market:"Atlanta", jobnumber:508980, tech_name:"Jay Johnson", "cancelation reason":"HQ: Part availability", status:"Withdrawn: Reschedule", cancelation_time_frame_hours:124 });
+        assert(row.month === "2026-04-01", "month map failed");
+        assert(row.week === "2026-04-27", "week map failed");
+        assert(row.appointment_date === "2026-04-28", "appointment date map failed");
+        assert(row._type === "HQ", "type enrich failed");
+        assert(row._withdrawalType === "Reschedule", "withdrawal enrich failed");
+      });
+
+      state.testResults = tests;
+      console.table(tests);
+    }
+
+    function setBadgeError(message){
+      el("dataBadge").className = "badge error";
+      el("dataBadgeText").textContent = "Error";
+      el("dataNote").textContent = message || "Live data unavailable";
+    }
     function revealApp(){
-      $('loading').classList.add('hidden');
-      $('app').classList.remove('hidden');
+      el("loading").classList.add("hidden");
+      el("app").classList.remove("hidden");
     }
-
-    function showFatalError(error){
+    function showError(err){
       revealApp();
-      setStatus('error', 'Live Data Error');
-      $('subtitle').textContent = 'Dashboard could not load or render live data';
-      $('rowCount').textContent = '';
-      $('kpiGrid').innerHTML = `
-        <div class="card wide">
-          <div class="section-label">Error</div>
-          <div class="metric-value" style="font-size:16px;color:var(--red);">${escapeHtml(error?.message || error)}</div>
-          <div class="small-muted">Source: ${escapeHtml(DATA_URL)}</div>
-        </div>`;
+      state.loadError = err;
+      setBadgeError(err?.message || String(err));
+      el("subtitle").textContent = "Failed to load or render the cancellation dashboard.";
+      el("kpiGrid").innerHTML = `<div class="card" style="grid-column:1/-1;"><div class="section-label">Dashboard Error</div><div class="metric-value" style="font-size:16px;color:var(--red);">${safe(err?.message || err)}</div><div class="small-muted">Source: ${safe(DATA_URL)}</div></div>`;
+      el("debugOutput").innerHTML = renderDebugHtml();
     }
 
-    function fillSelect(id, allLabel, values, selected){
-      const options = [allLabel, ...values].map(v => `<option value="${escapeHtml(v)}" ${selected === v ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
-      $(id).innerHTML = options;
+    function optionList(allLabel, values, selected){
+      return [allLabel, ...values].map(v => `<option value="${safe(v)}" ${selected === v ? "selected" : ""}>${safe(v)}</option>`).join("");
     }
-
-    function getFilters(){
-      return {
-        from: $('dateFrom').value,
-        to: $('dateTo').value,
-        market: $('marketSelect').value,
-        type: $('typeSelect').value,
-        reason: $('reasonSelect').value,
-        category: $('categorySelect').value,
-        status: $('statusSelect').value,
-        tech: $('techSelect').value,
-        origTech: $('origTechSelect').value,
-        timing: $('timingSelect').value,
-        withdrawal: $('withdrawalSelect').value
-      };
-    }
-
-    function scopedRows(excludeKey){
-      const f = getFilters();
-      return state.rawData.filter(r =>
-        (excludeKey === 'market' || f.market === 'All Markets' || r.market === f.market) &&
-        (excludeKey === 'type' || f.type === 'All Types' || r._type === f.type) &&
-        (excludeKey === 'reason' || f.reason === 'All Reasons' || r._fullReason === f.reason) &&
-        (excludeKey === 'category' || f.category === 'All Categories' || r._category === f.category) &&
-        (excludeKey === 'status' || f.status === 'All Statuses' || r.status === f.status) &&
-        (excludeKey === 'tech' || f.tech === 'All Technicians' || r.tech_name === f.tech) &&
-        (excludeKey === 'origTech' || f.origTech === 'All Original Techs' || r.original_technician === f.origTech) &&
-        (excludeKey === 'timing' || f.timing === 'All Timing Buckets' || r._timingBucket === f.timing) &&
-        (excludeKey === 'withdrawal' || f.withdrawal === 'All Withdrawal Types' || r._withdrawalType === f.withdrawal)
+    function uniqueSorted(rows, key){ return [...new Set(rows.map(r => r[key]).filter(Boolean))].sort(); }
+    function getScopedRows(exclude){
+      return state.rows.filter(r =>
+        (exclude === "market" || state.market === "All Markets" || r.market === state.market) &&
+        (exclude === "type" || state.type === "All Types" || r._type === state.type) &&
+        (exclude === "reason" || state.reason === "All Reasons" || r.full_reason === state.reason) &&
+        (exclude === "category" || state.category === "All Categories" || r._category === state.category) &&
+        (exclude === "tech" || state.tech === "All Technicians" || r.tech_name === state.tech || r.original_technician === state.tech) &&
+        (exclude === "withdrawal" || state.withdrawal === "All Withdrawal Types" || r._withdrawalType === state.withdrawal)
       );
     }
-
-    function validOrAll(current, allLabel, values){ return current === allLabel || values.includes(current) ? current : allLabel; }
-
-    function renderSelects(){
-      const current = getFilters();
-      const options = {
-        market: [...new Set(scopedRows('market').map(r => r.market).filter(Boolean))].sort(),
-        type: [...new Set(scopedRows('type').map(r => r._type).filter(Boolean))].sort(),
-        reason: [...new Set(scopedRows('reason').map(r => r._fullReason).filter(Boolean))].sort(),
-        category: [...new Set(scopedRows('category').map(r => r._category).filter(Boolean))].sort(),
-        status: [...new Set(scopedRows('status').map(r => r.status).filter(Boolean))].sort(),
-        tech: [...new Set(scopedRows('tech').map(r => r.tech_name).filter(Boolean))].sort(),
-        origTech: [...new Set(scopedRows('origTech').map(r => r.original_technician).filter(Boolean))].sort(),
-        timing: TIMING_BUCKETS,
-        withdrawal: ['Reschedule','True Withdrawal']
-      };
-
-      fillSelect('marketSelect', 'All Markets', options.market, validOrAll(current.market, 'All Markets', options.market));
-      fillSelect('typeSelect', 'All Types', options.type, validOrAll(current.type, 'All Types', options.type));
-      fillSelect('reasonSelect', 'All Reasons', options.reason, validOrAll(current.reason, 'All Reasons', options.reason));
-      fillSelect('categorySelect', 'All Categories', options.category, validOrAll(current.category, 'All Categories', options.category));
-      fillSelect('statusSelect', 'All Statuses', options.status, validOrAll(current.status, 'All Statuses', options.status));
-      fillSelect('techSelect', 'All Technicians', options.tech, validOrAll(current.tech, 'All Technicians', options.tech));
-      fillSelect('origTechSelect', 'All Original Techs', options.origTech, validOrAll(current.origTech, 'All Original Techs', options.origTech));
-      fillSelect('timingSelect', 'All Timing Buckets', options.timing, validOrAll(current.timing, 'All Timing Buckets', options.timing));
-      fillSelect('withdrawalSelect', 'All Withdrawal Types', options.withdrawal, validOrAll(current.withdrawal, 'All Withdrawal Types', options.withdrawal));
+    function renderFilters(){
+      el("marketSelect").innerHTML = optionList("All Markets", uniqueSorted(getScopedRows("market"), "market"), state.market);
+      el("typeSelect").innerHTML = optionList("All Types", uniqueSorted(getScopedRows("type"), "_type"), state.type);
+      el("reasonSelect").innerHTML = optionList("All Reasons", uniqueSorted(getScopedRows("reason"), "full_reason"), state.reason);
+      el("categorySelect").innerHTML = optionList("All Categories", uniqueSorted(getScopedRows("category"), "_category"), state.category);
+      const techs = [...new Set(getScopedRows("tech").flatMap(r => [r.tech_name, r.original_technician]).filter(Boolean))].sort();
+      el("techSelect").innerHTML = optionList("All Technicians", techs, state.tech);
+      el("withdrawalSelect").innerHTML = optionList("All Withdrawal Types", uniqueSorted(getScopedRows("withdrawal"), "_withdrawalType"), state.withdrawal);
+      el("dateFrom").value = state.dateFrom;
+      el("dateTo").value = state.dateTo;
     }
 
     function applyFilters(){
-      const f = getFilters();
-      state.filteredData = state.rawData.filter(r => {
-        if(f.from && r.appointment_date < f.from) return false;
-        if(f.to && r.appointment_date > f.to) return false;
-        if(f.market !== 'All Markets' && r.market !== f.market) return false;
-        if(f.type !== 'All Types' && r._type !== f.type) return false;
-        if(f.reason !== 'All Reasons' && r._fullReason !== f.reason) return false;
-        if(f.category !== 'All Categories' && r._category !== f.category) return false;
-        if(f.status !== 'All Statuses' && r.status !== f.status) return false;
-        if(f.tech !== 'All Technicians' && r.tech_name !== f.tech) return false;
-        if(f.origTech !== 'All Original Techs' && r.original_technician !== f.origTech) return false;
-        if(f.timing !== 'All Timing Buckets' && r._timingBucket !== f.timing) return false;
-        if(f.withdrawal !== 'All Withdrawal Types' && r._withdrawalType !== f.withdrawal) return false;
-        return true;
-      });
-      state.detailPage = 1;
-      renderAll();
+      state.filtered = state.rows.filter(r =>
+        (state.market === "All Markets" || r.market === state.market) &&
+        (state.type === "All Types" || r._type === state.type) &&
+        (state.reason === "All Reasons" || r.full_reason === state.reason) &&
+        (state.category === "All Categories" || r._category === state.category) &&
+        (state.tech === "All Technicians" || r.tech_name === state.tech || r.original_technician === state.tech) &&
+        (state.withdrawal === "All Withdrawal Types" || r._withdrawalType === state.withdrawal) &&
+        (!state.dateFrom || r.appointment_date >= state.dateFrom) &&
+        (!state.dateTo || r.appointment_date <= state.dateTo)
+      );
+      state.page = 1;
     }
 
-    function destroyChart(id){ if(state.charts[id]){ state.charts[id].destroy(); delete state.charts[id]; } }
-    function makeChart(id, config){
-      destroyChart(id);
-      const canvas = $(id);
-      if(!canvas || !window.Chart) return;
-      state.charts[id] = new Chart(canvas, config);
-    }
-
-    function renderKPIs(){
-      const d = state.filteredData;
-      const total = d.length;
-      const hq = d.filter(r => r._type === 'HQ').length;
-      const customer = d.filter(r => r._type === 'Customer').length;
-      const other = total - hq - customer;
-      const reschedules = d.filter(r => r._isReschedule).length;
-      const trueWithdrawals = total - reschedules;
-      const priceTooHigh = d.filter(r => r._fullReason === 'Customer: Price too high').length;
-      const partsHQ = d.filter(r => r._type === 'HQ' && r._category === 'Parts Issue').length;
-      const hours = d.map(r => Number(r.cancelation_time_frame_hours)).filter(v => !Number.isNaN(v));
-      const avgHours = hours.length ? (hours.reduce((a,b) => a+b, 0) / hours.length).toFixed(1) : '—';
-
-      const cards = [
-        ['Total Cancellations', fmt(total), 'All rows in current filters'],
-        ['HQ Cancellations', fmt(hq), `${pct(hq,total)} of total`],
-        ['Customer Cancellations', fmt(customer), `${pct(customer,total)} of total`],
-        ['Other Cancellations', fmt(other), `${pct(other,total)} of total`],
-        ['Reschedules', fmt(reschedules), `${pct(reschedules,total)} of total`],
-        ['True Withdrawals', fmt(trueWithdrawals), `${pct(trueWithdrawals,total)} of total`],
-        ['Avg Cancel Time', avgHours, 'Hours before appointment'],
-        ['Price Too High', fmt(priceTooHigh), `${pct(priceTooHigh,customer)} of customer`],
-        ['Parts-Related HQ', fmt(partsHQ), `${pct(partsHQ,hq)} of HQ`]
-      ];
-
-      $('kpiGrid').innerHTML = cards.map(([label, value, sub]) => `
-        <div class="card tight">
-          <div class="section-label">${escapeHtml(label)}</div>
-          <div class="metric-value">${escapeHtml(value)}</div>
-          <div class="small-muted">${escapeHtml(sub)}</div>
-        </div>`).join('');
-    }
-
-    function renderInsights(){
-      const d = state.filteredData;
-      const total = d.length;
-      const hq = d.filter(r => r._type === 'HQ');
-      const customer = d.filter(r => r._type === 'Customer');
-      const reschedules = d.filter(r => r._isReschedule).length;
-      const hqPct = total ? Math.round((hq.length / total) * 100) : 0;
-      const reschedPct = total ? Math.round((reschedules / total) * 100) : 0;
-      const topHQReason = topKey(groupCount(hq, r => r._fullReason));
-      const topHQCategory = topKey(groupCount(hq, r => r._category));
-      const topCustomerReason = topKey(groupCount(customer, r => r._fullReason));
-      const topMarket = topKey(groupCount(hq, r => r.market));
-      const topTech = topKey(groupCount(hq, r => r.tech_name));
-      const topTiming = topKey(groupCount(d, r => r._timingBucket));
-      const priceTooHigh = customer.filter(r => r._fullReason === 'Customer: Price too high').length;
-
-      const items = [
-        {dot:'hq', html: total ? `<strong>${fmt(hq.length)} HQ cancellations</strong> represent <strong>${hqPct}%</strong> of ${fmt(total)} total cancellations.${hqPct >= 40 ? ' HQ is a meaningful share and should be prioritized.' : ''}` : 'No cancellations in current filters.'},
-        {dot:'hq', html: topHQReason !== '—' ? `Top HQ reason: <strong>${escapeHtml(topHQReason.replace('HQ:', '').trim())}</strong>.` : 'No HQ cancellations in current filters.'},
-        {dot:'hq', html: topHQCategory !== '—' ? `Top HQ category: <strong>${escapeHtml(topHQCategory)}</strong>.` : 'No HQ category data.'},
-        {dot:'hq', html: topMarket !== '—' ? `Highest HQ market: <strong>${escapeHtml(topMarket)}</strong>.` : 'No HQ market data.'},
-        {dot:'hq', html: topTech !== '—' ? `Highest HQ technician: <strong>${escapeHtml(topTech)}</strong>.` : 'No HQ technician data.'},
-        {dot:'customer', html: topCustomerReason !== '—' ? `Top customer reason: <strong>${escapeHtml(topCustomerReason.replace('Customer:', '').trim())}</strong>.` : 'No customer cancellations in current filters.'},
-        {dot:'customer', html: priceTooHigh ? `<strong>${fmt(priceTooHigh)}</strong> price-too-high cancellations detected (${pct(priceTooHigh, customer.length)} of customer).` : 'No price-too-high cancellations in current filters.'},
-        {dot:'neutral', html: `Most common timing bucket: <strong>${escapeHtml(topTiming)}</strong>.`},
-        {dot:'neutral', html: `<strong>${fmt(reschedules)}</strong> cancellations are reschedules (${reschedPct}%).${reschedPct >= 40 ? ' Gross cancellations may overstate true lost demand.' : ''}`}
-      ];
-
-      $('insightsGrid').innerHTML = items.map(item => `
-        <div class="insight-item"><div class="insight-dot ${item.dot}"></div><div>${item.html}</div></div>`).join('');
-    }
-
-    function renderTrendChart(){
-      const d = state.filteredData;
-      const periods = [...new Set(d.map(r => getPeriodKey(r)).filter(Boolean))].sort();
-      const types = ['HQ','Customer','Other'];
-      const colors = ['#6366f1','#f59e0b','#94a3b8'];
-      const datasets = types.map((type, idx) => ({
-        label: type,
-        data: periods.map(p => {
-          const rows = d.filter(r => getPeriodKey(r) === p);
-          const n = rows.filter(r => r._type === type).length;
-          return state.viewMode === 'pct' ? pctNum(n, rows.length) : n;
-        }),
-        backgroundColor: colors[idx] + 'cc',
-        borderColor: colors[idx],
-        borderWidth: 1.5
-      }));
-
-      $('trendSub').textContent = `${state.period.toUpperCase()} view · ${state.viewMode === 'pct' ? '% share' : 'raw count'}`;
-      makeChart('trendChart', {
-        type:'bar',
-        data:{ labels:periods.map(formatPeriodLabel), datasets },
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top' } }, scales:{ x:{ stacked:true, grid:{ display:false } }, y:{ stacked:true, beginAtZero:true } } }
-      });
-    }
-
-    function barChart(id, rows, keyFn, title, color, totalBaseLabel){
-      const entries = sortedEntries(groupCount(rows, keyFn)).slice(0, 15);
+    function aggregate(rows){
       const total = rows.length;
-      makeChart(id, {
-        type:'bar',
-        data:{ labels:entries.map(e => e[0]), datasets:[{ label:title, data:entries.map(e => state.viewMode === 'pct' ? pctNum(e[1], total) : e[1]), backgroundColor:color + 'cc', borderColor:color, borderWidth:1.5, borderRadius:4 }] },
-        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx) => { const cnt = entries[ctx.dataIndex]?.[1] || 0; return ` ${cnt} (${pct(cnt,total)} of ${totalBaseLabel})`; } } } }, scales:{ x:{ beginAtZero:true, grid:{ display:false } }, y:{ grid:{ display:false } } } }
-      });
-    }
-
-    function renderBreakdownCharts(){
-      const hq = state.filteredData.filter(r => r._type === 'HQ');
-      const customer = state.filteredData.filter(r => r._type === 'Customer');
-      barChart('hqReasonChart', hq, r => r._reason, 'HQ Reasons', '#6366f1', 'HQ');
-      barChart('hqCategoryChart', hq, r => r._category, 'HQ Categories', '#6366f1', 'HQ');
-      barChart('customerReasonChart', customer, r => r._reason, 'Customer Reasons', '#f59e0b', 'customer');
-      barChart('customerCategoryChart', customer, r => r._category, 'Customer Categories', '#f59e0b', 'customer');
-    }
-
-    function renderMarketChart(){
-      const d = state.filteredData;
-      const markets = [...new Set(d.map(r => r.market).filter(Boolean))].sort((a,b) => d.filter(r => r.market === b && r._type === 'HQ').length - d.filter(r => r.market === a && r._type === 'HQ').length).slice(0, 15);
-      makeChart('marketChart', {
-        type:'bar',
-        data:{ labels:markets, datasets:[
-          { label:'HQ', data:markets.map(m => d.filter(r => r.market === m && r._type === 'HQ').length), backgroundColor:'#6366f1cc', borderColor:'#6366f1', borderWidth:1.5, borderRadius:4 },
-          { label:'Customer', data:markets.map(m => d.filter(r => r.market === m && r._type === 'Customer').length), backgroundColor:'#f59e0bcc', borderColor:'#f59e0b', borderWidth:1.5, borderRadius:4 }
-        ]},
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top' } }, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, grid:{ display:false } } } }
-      });
-    }
-
-    function renderPriceChart(){
-      const d = state.filteredData;
-      const periods = [...new Set(d.map(r => getPeriodKey(r)).filter(Boolean))].sort();
-      makeChart('priceChart', {
-        type:'bar',
-        data:{ labels:periods.map(formatPeriodLabel), datasets:[{ label:'Price Too High', data:periods.map(p => { const rows = d.filter(r => getPeriodKey(r) === p); const n = rows.filter(r => r._fullReason === 'Customer: Price too high').length; return state.viewMode === 'pct' ? pctNum(n, rows.length) : n; }), backgroundColor:'#f59e0bcc', borderColor:'#f59e0b', borderWidth:1.5, borderRadius:4 }]},
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, grid:{ display:false } } } }
-      });
-    }
-
-    function renderTimingChart(){
-      const d = state.filteredData;
-      makeChart('timingChart', {
-        type:'bar',
-        data:{ labels:TIMING_BUCKETS, datasets:[
-          { label:'HQ', data:TIMING_BUCKETS.map(b => d.filter(r => r._type === 'HQ' && r._timingBucket === b).length), backgroundColor:'#6366f1cc', borderColor:'#6366f1', borderWidth:1.5, borderRadius:4 },
-          { label:'Customer', data:TIMING_BUCKETS.map(b => d.filter(r => r._type === 'Customer' && r._timingBucket === b).length), backgroundColor:'#f59e0bcc', borderColor:'#f59e0b', borderWidth:1.5, borderRadius:4 }
-        ]},
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top' } }, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, grid:{ display:false } } } }
-      });
-    }
-
-    function renderWithdrawalChart(){
-      const d = state.filteredData;
-      const reschedules = d.filter(r => r._withdrawalType === 'Reschedule').length;
-      const trueWithdrawals = d.filter(r => r._withdrawalType === 'True Withdrawal').length;
-      makeChart('withdrawalChart', {
-        type:'doughnut',
-        data:{ labels:['Reschedule','True Withdrawal'], datasets:[{ data:[reschedules, trueWithdrawals], backgroundColor:['#6366f1cc','#94a3b8cc'], borderColor:['#6366f1','#94a3b8'], borderWidth:2 }]},
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
-      });
-    }
-
-    function renderTechTable(){
-      const field = state.techMode === 'assigned' ? 'tech_name' : 'original_technician';
-      const techs = [...new Set(state.filteredData.map(r => r[field]).filter(Boolean))];
-      const rows = techs.map(t => {
-        const data = state.filteredData.filter(r => r[field] === t);
-        const hq = data.filter(r => r._type === 'HQ');
-        const customer = data.filter(r => r._type === 'Customer');
-        return { tech:t, total:data.length, hq:hq.length, customer:customer.length, topReason:topKey(groupCount(hq, r => r._reason)), topCategory:topKey(groupCount(hq, r => r._category)) };
-      }).sort((a,b) => b.hq - a.hq);
-      $('techTableBody').innerHTML = rows.length ? rows.map(r => `
-        <tr><td><strong>${escapeHtml(r.tech)}</strong></td><td>${fmt(r.total)}</td><td>${fmt(r.hq)}</td><td>${fmt(r.customer)}</td><td>${pct(r.hq,r.total)}</td><td>${escapeHtml(r.topReason)}</td><td>${escapeHtml(r.topCategory)}</td></tr>`).join('') : '<tr><td colspan="7" class="empty-state">No technician data</td></tr>';
-    }
-
-    function filteredDetailRows(){
-      const q = $('tableSearch').value.trim().toLowerCase();
-      let rows = state.filteredData.filter(r => !q || [r.appointment_date,r.market,r.jobnumber,r.tech_name,r.original_technician,r._type,r._reason,r._category,r.status].join(' ').toLowerCase().includes(q));
-      const {key, asc} = state.detailSort;
-      rows = [...rows].sort((a,b) => {
-        const av = a[key] ?? '';
-        const bv = b[key] ?? '';
-        const an = Number(av);
-        const bn = Number(bv);
-        const cmp = !Number.isNaN(an) && !Number.isNaN(bn) ? an - bn : String(av).localeCompare(String(bv));
-        return asc ? cmp : -cmp;
-      });
-      return rows;
-    }
-
-    function renderDetailTable(){
-      const rows = filteredDetailRows();
-      const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-      state.detailPage = Math.min(Math.max(1, state.detailPage), pages);
-      const pageRows = rows.slice((state.detailPage - 1) * PAGE_SIZE, state.detailPage * PAGE_SIZE);
-      $('pageInfo').textContent = `${fmt(rows.length)} rows · Page ${state.detailPage}/${pages}`;
-      $('prevBtn').disabled = state.detailPage <= 1;
-      $('nextBtn').disabled = state.detailPage >= pages;
-      $('detailTableBody').innerHTML = pageRows.length ? pageRows.map(r => {
-        const link = /^https?:\/\//i.test(r.link) ? r.link : '';
-        return `<tr>
-          <td class="mono">${escapeHtml(r.appointment_date)}</td>
-          <td>${escapeHtml(r.market)}</td>
-          <td class="link-cell">${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.jobnumber)}</a>` : escapeHtml(r.jobnumber)}</td>
-          <td>${escapeHtml(r.tech_name || '—')}</td>
-          <td>${escapeHtml(r.original_technician || '—')}</td>
-          <td><span class="badge ${r._type.toLowerCase()}">${escapeHtml(r._type)}</span></td>
-          <td>${escapeHtml(r._reason)}</td>
-          <td>${escapeHtml(r._category)}</td>
-          <td>${escapeHtml(r.status)}</td>
-          <td>${escapeHtml(r._timingBucket)}</td>
-          <td class="mono">${escapeHtml(r.cancelation_time_frame_hours || '—')}</td>
-          <td class="mono">${escapeHtml(r['withdrawn date'] || '—')}</td>
-          <td class="mono">${escapeHtml(r.appointment_create_date || '—')}</td>
-        </tr>`;
-      }).join('') : '<tr><td colspan="13" class="empty-state">No rows match the current filters</td></tr>';
+      const hq = rows.filter(r => r._type === "HQ").length;
+      const customer = rows.filter(r => r._type === "Customer").length;
+      const other = total - hq - customer;
+      const reschedule = rows.filter(r => r._isReschedule).length;
+      const trueWithdrawal = total - reschedule;
+      const priceTooHigh = rows.filter(r => r.full_reason === "Customer: Price too high").length;
+      const avgHours = total ? rows.reduce((s,r) => s + num(r.cancelation_time_frame_hours), 0) / total : 0;
+      return { total, hq, customer, other, reschedule, trueWithdrawal, priceTooHigh, avgHours };
     }
 
     function renderHeader(){
-      const dates = state.filteredData.map(r => r.appointment_date).filter(Boolean).sort();
-      const from = dates[0] || '—';
-      const to = dates[dates.length - 1] || '—';
-      $('subtitle').textContent = `${state.period.toUpperCase()} trend · ${from} to ${to}`;
-      $('rowCount').textContent = `${fmt(state.filteredData.length)} filtered · ${fmt(state.rawData.length)} total`;
+      const dates = state.filtered.map(r => r.appointment_date).filter(Boolean).sort();
+      const from = dates[0] || "—";
+      const to = dates[dates.length-1] || "—";
+      el("subtitle").textContent = `${fmt(state.filtered.length)} cancellations · ${from} to ${to} · ${state.period.toUpperCase()} view`;
+      el("dataBadge").className = "badge live";
+      el("dataBadgeText").textContent = "Live Data";
+      el("dataNote").textContent = `${fmt(state.rows.length)} rows loaded from GitHub`;
     }
 
-    function renderAll(){
+    function renderControls(){
+      document.querySelectorAll(".period-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.period === state.period));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === state.tab));
+      el("overviewTab").classList.toggle("hidden", state.tab !== "overview");
+      el("trendsTab").classList.toggle("hidden", state.tab !== "trends");
+      el("detailsTab").classList.toggle("hidden", state.tab !== "details");
+      el("debugTab").classList.toggle("hidden", state.tab !== "debug");
+      document.querySelectorAll("#mixViewToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.mixView === state.mixView));
+      document.querySelectorAll("#trendMetricToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.trendMetric === state.trendMetric));
+      document.querySelectorAll("#trendChartToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.chartType === state.trendChartType));
+    }
+
+    function renderKPIs(){
+      const a = aggregate(state.filtered);
+      const cards = [
+        ["Total Cancellations", fmt(a.total), "All live rows after filters"],
+        ["HQ Cancellations", fmt(a.hq), `${pct(a.hq,a.total)} of total`],
+        ["Customer Cancellations", fmt(a.customer), `${pct(a.customer,a.total)} of total`],
+        ["Other / Uncategorized", fmt(a.other), `${pct(a.other,a.total)} of total`],
+        ["Reschedules", fmt(a.reschedule), `${pct(a.reschedule,a.total)} of total`],
+        ["True Withdrawals", fmt(a.trueWithdrawal), `${pct(a.trueWithdrawal,a.total)} of total`],
+        ["Price Too High", fmt(a.priceTooHigh), `${pct(a.priceTooHigh,a.customer)} of customer`],
+        ["Avg Cancel Time", a.total ? a.avgHours.toFixed(1) + " hrs" : "—", "Average hours before appointment"]
+      ];
+      el("kpiGrid").innerHTML = cards.map(c => `<div class="card tight"><div class="section-label">${safe(c[0])}</div><div class="metric-value">${safe(c[1])}</div><div class="small-muted">${safe(c[2])}</div></div>`).join("");
+    }
+
+    function renderInsights(){
+      const rows = state.filtered;
+      const a = aggregate(rows);
+      const hqRows = rows.filter(r => r._type === "HQ");
+      const custRows = rows.filter(r => r._type === "Customer");
+      const insights = [
+        ["HQ Share", `${fmt(a.hq)} HQ cancellations make up ${pct(a.hq,a.total)} of all cancellations.${a.total && a.hq/a.total >= 0.4 ? " This is a meaningful operational share to review." : ""}`],
+        ["Top HQ Driver", hqRows.length ? `${topItem(hqRows, r => r._reason)} is the leading HQ reason. Category: ${topItem(hqRows, r => r._category)}.` : "No HQ cancellations in the current filter."],
+        ["Top Customer Signal", custRows.length ? `${topItem(custRows, r => r._reason)} is the leading customer reason. Category: ${topItem(custRows, r => r._category)}.` : "No customer cancellations in the current filter."],
+        ["Market Concentration", hqRows.length ? `${topItem(hqRows, r => r.market)} has the highest HQ cancellation volume in the current filter.` : "No HQ market concentration to show."],
+        ["Technician View", hqRows.length ? `${topItem(hqRows, r => r.tech_name)} has the highest assigned-tech HQ cancellation count.` : "No HQ technician pattern to show."],
+        ["Reschedule Context", `${fmt(a.reschedule)} of ${fmt(a.total)} cancellations are reschedules (${pct(a.reschedule,a.total)}).${a.total && a.reschedule/a.total >= 0.4 ? " Gross cancellations may overstate true lost demand." : ""}`]
+      ];
+      el("insightsGrid").innerHTML = insights.map(i => `<div class="insight-card"><div class="insight-title">${safe(i[0])}</div><div class="insight-text">${safe(i[1])}</div></div>`).join("");
+    }
+
+    function periodSeries(rows){
+      const groups = new Map();
+      rows.forEach(r => {
+        const k = getPeriodKey(r);
+        if(!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(r);
+      });
+      return [...groups.entries()].sort((a,b) => a[0].localeCompare(b[0])).map(([label, rows]) => ({ label, rows, ...aggregate(rows) }));
+    }
+
+    function renderMixChart(){
+      const data = periodSeries(state.filtered);
+      const labels = data.map(d => formatPeriodLabel(d.label));
+      const useShare = state.mixView === "share";
+      const value = (d, key) => useShare ? pctNum(d[key], d.total) : d[key];
+      makeChart("mixChart", {
+        type:"bar",
+        data:{
+          labels,
+          datasets:[
+            { label:"HQ", data:data.map(d => value(d,"hq")), backgroundColor:COLORS.hq },
+            { label:"Customer", data:data.map(d => value(d,"customer")), backgroundColor:COLORS.customer },
+            { label:"Other", data:data.map(d => value(d,"other")), backgroundColor:COLORS.other }
+          ]
+        },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:"top" } }, scales:{ x:{ stacked:true, grid:{ display:false } }, y:{ stacked:true, beginAtZero:true, title:{ display:true, text:useShare ? "% Share" : "Count" } } } }
+      });
+    }
+
+    function renderReasonCharts(){
+      const hq = groupCount(state.filtered.filter(r => r._type === "HQ"), r => r._reason).slice(0,12).reverse();
+      const cust = groupCount(state.filtered.filter(r => r._type === "Customer"), r => r._reason).slice(0,12).reverse();
+      makeChart("hqReasonsChart", { type:"bar", data:{ labels:hq.map(x=>x[0]), datasets:[{ label:"HQ", data:hq.map(x=>x[1]), backgroundColor:COLORS.hq }] }, options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, grid:{ display:false } }, y:{ grid:{ display:false } } } } });
+      makeChart("customerReasonsChart", { type:"bar", data:{ labels:cust.map(x=>x[0]), datasets:[{ label:"Customer", data:cust.map(x=>x[1]), backgroundColor:COLORS.customer }] }, options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, grid:{ display:false } }, y:{ grid:{ display:false } } } } });
+    }
+
+    function trendValue(d){
+      if(state.trendMetric === "hq") return d.hq;
+      if(state.trendMetric === "customer") return d.customer;
+      if(state.trendMetric === "price") return d.priceTooHigh;
+      if(state.trendMetric === "reschedule") return d.reschedule;
+      return d.total;
+    }
+    function trendLabel(){
+      return { total:"Total Cancellations", hq:"HQ Cancellations", customer:"Customer Cancellations", price:"Price Too High", reschedule:"Reschedules" }[state.trendMetric] || "Trend";
+    }
+    function renderTrendChart(){
+      const data = periodSeries(state.filtered);
+      el("trendTitle").textContent = `${trendLabel()} — ${state.period.toUpperCase()}`;
+      makeChart("trendChart", {
+        type:state.trendChartType,
+        data:{ labels:data.map(d => formatPeriodLabel(d.label)), datasets:[{ label:trendLabel(), data:data.map(trendValue), borderColor:COLORS.hq, backgroundColor:COLORS.hq + "cc", tension:0.25, borderWidth:2 }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, grid:{ display:false } } } }
+      });
+    }
+    function renderTimingAndWithdrawal(){
+      const hq = state.filtered.filter(r => r._type === "HQ");
+      const cust = state.filtered.filter(r => r._type === "Customer");
+      makeChart("timingChart", { type:"bar", data:{ labels:TIMING_BUCKETS, datasets:[{ label:"HQ", data:TIMING_BUCKETS.map(b => hq.filter(r => r._timingBucket === b).length), backgroundColor:COLORS.hq }, { label:"Customer", data:TIMING_BUCKETS.map(b => cust.filter(r => r._timingBucket === b).length), backgroundColor:COLORS.customer }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:"top" } }, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, grid:{ display:false } } } } });
+      const a = aggregate(state.filtered);
+      makeChart("withdrawalChart", { type:"doughnut", data:{ labels:["Reschedule","True Withdrawal"], datasets:[{ data:[a.reschedule, a.trueWithdrawal], backgroundColor:[COLORS.hq, COLORS.other] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" } } } });
+    }
+
+    function detailRows(){
+      const q = state.tableSearch.trim().toLowerCase();
+      let rows = state.filtered.filter(r => !q || [r.appointment_date,r.market,r.jobnumber,r.tech_name,r.original_technician,r._type,r._reason,r._category,r.status].join(" ").toLowerCase().includes(q));
+      rows = [...rows].sort((a,b) => {
+        const av = a[state.sortKey] ?? "";
+        const bv = b[state.sortKey] ?? "";
+        const an = parseFloat(av), bn = parseFloat(bv);
+        const cmp = Number.isFinite(an) && Number.isFinite(bn) ? an - bn : String(av).localeCompare(String(bv));
+        return state.sortAsc ? cmp : -cmp;
+      });
+      return rows;
+    }
+    function renderDetailTable(){
+      const rows = detailRows();
+      const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+      state.page = Math.min(Math.max(1, state.page), pages);
+      const slice = rows.slice((state.page-1)*PAGE_SIZE, state.page*PAGE_SIZE);
+      el("pageInfo").textContent = `${fmt(rows.length)} rows · Page ${state.page}/${pages}`;
+      el("prevBtn").disabled = state.page <= 1;
+      el("nextBtn").disabled = state.page >= pages;
+      if(!slice.length){ el("detailTableBody").innerHTML = `<tr><td colspan="13"><div class="empty-state">No rows match the current filters.</div></td></tr>`; return; }
+      el("detailTableBody").innerHTML = slice.map(r => {
+        const safeLink = /^https?:\/\//i.test(r.link) ? r.link : "";
+        return `<tr>
+          <td class="mono">${safe(r.appointment_date)}</td>
+          <td>${safe(r.market)}</td>
+          <td class="link-cell">${safeLink ? `<a href="${safe(safeLink)}" target="_blank" rel="noopener noreferrer">${safe(r.jobnumber)}</a>` : safe(r.jobnumber)}</td>
+          <td>${safe(r.tech_name)}</td>
+          <td>${safe(r.original_technician)}</td>
+          <td><span class="type-badge ${safe(r._type.toLowerCase())}">${safe(r._type)}</span></td>
+          <td>${safe(r._reason)}</td>
+          <td>${safe(r._category)}</td>
+          <td>${safe(r.status)}</td>
+          <td>${safe(r._timingBucket)}</td>
+          <td class="mono">${safe(r.cancelation_time_frame_hours)}</td>
+          <td class="mono">${safe(r.withdrawn_date)}</td>
+          <td class="mono">${safe(r.appointment_create_date)}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderDebugHtml(){
+      const sample = state.rows[0] || null;
+      const tests = state.testResults.map(t => `${t.pass ? "✅" : "❌"} ${safe(t.name)}${t.error ? ": " + safe(t.error) : ""}`).join("<br>");
+      return `
+        <div><strong>Source:</strong> ${safe(DATA_URL)}</div>
+        <div><strong>Raw rows:</strong> ${fmt(state.rawRows.length)}</div>
+        <div><strong>Normalized rows:</strong> ${fmt(state.rows.length)}</div>
+        <div><strong>Filtered rows:</strong> ${fmt(state.filtered.length)}</div>
+        <div><strong>Tests:</strong><br>${tests || "Not run"}</div>
+        <pre style="white-space:pre-wrap;margin-top:10px;">${safe(JSON.stringify(sample, null, 2))}</pre>
+      `;
+    }
+    function renderDebug(){ el("debugOutput").innerHTML = renderDebugHtml(); }
+
+    function render(){
+      applyFilters();
+      renderFilters();
+      renderControls();
       renderHeader();
       renderKPIs();
       renderInsights();
+      renderMixChart();
+      renderReasonCharts();
       renderTrendChart();
-      renderBreakdownCharts();
-      renderMarketChart();
-      renderPriceChart();
-      renderTimingChart();
-      renderWithdrawalChart();
-      renderTechTable();
+      renderTimingAndWithdrawal();
       renderDetailTable();
+      renderDebug();
     }
 
     function resetFilters(){
-      ['dateFrom','dateTo'].forEach(id => $(id).value = '');
-      renderSelects();
-      $('tableSearch').value = '';
-      state.detailPage = 1;
-      applyFilters();
+      Object.assign(state, { market:"All Markets", type:"All Types", reason:"All Reasons", category:"All Categories", tech:"All Technicians", withdrawal:"All Withdrawal Types", dateFrom:"", dateTo:"", tableSearch:"", page:1 });
+      el("tableSearch").value = "";
+      render();
     }
-
     function exportCSV(){
-      const headers = ['appointment_date','month','week','market','jobnumber','tech_name','original_technician','cancellation_type','cancellation_reason','reason_category','status','timing_bucket','cancelation_time_frame_hours','withdrawn_date','appointment_create_date','link'];
-      const rows = filteredDetailRows().map(r => headers.map(h => JSON.stringify({
-        cancellation_type:r._type,
-        cancellation_reason:r._reason,
-        reason_category:r._category,
-        timing_bucket:r._timingBucket,
-        withdrawn_date:r['withdrawn date']
-      }[h] ?? r[h] ?? '')).join(','));
-      const blob = new Blob([[headers.join(','), ...rows].join('\n')], {type:'text/csv'});
+      const headers = ["appointment_date","month","week","market","jobnumber","tech_name","original_technician","type","reason","category","status","withdrawal_type","timing_bucket","cancelation_time_frame_hours","withdrawn_date","appointment_create_date","link"];
+      const rows = detailRows().map(r => [r.appointment_date,r.month,r.week,r.market,r.jobnumber,r.tech_name,r.original_technician,r._type,r._reason,r._category,r.status,r._withdrawalType,r._timingBucket,r.cancelation_time_frame_hours,r.withdrawn_date,r.appointment_create_date,r.link].map(v => JSON.stringify(v ?? "")).join(","));
+      const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type:"text/csv" });
+      const a = document.createElement("a");
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
       a.href = url;
-      a.download = 'cancellation_dashboard_export.csv';
+      a.download = "nubrakes_cancellations.csv";
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
     }
 
-    function runTests(){
-      const results = [];
-      function test(name, fn){
-        try { fn(); results.push({name, pass:true}); }
-        catch(e){ results.push({name, pass:false, message:e.message}); }
-      }
-      function assert(condition, message){ if(!condition) throw new Error(message); }
-
-      test('dateOnly parses timestamp strings', () => assert(dateOnly('2026-04-28 00:00:00') === '2026-04-28', 'Expected dateOnly to strip time'));
-      test('week starts Monday', () => assert(getWeekStart('2026-04-28') === '2026-04-27', 'Expected Tuesday 2026-04-28 to map to Monday 2026-04-27'));
-      test('normalization maps HQ reason', () => {
-        const row = normalizeRow({'appointment_date':'2026-04-28 00:00:00','cancelation reason':'HQ: Part availability','status':'Withdrawn: Reschedule'});
-        assert(row._type === 'HQ', 'Expected HQ type');
-        assert(row._category === 'Parts Issue', 'Expected Parts Issue category');
-        assert(row._withdrawalType === 'Reschedule', 'Expected Reschedule');
-      });
-      test('normalization maps Customer reason', () => {
-        const row = normalizeRow({'appointment_date':'2026-04-28 00:00:00','cancelation reason':'Customer: Price too high','status':'Withdrawn'});
-        assert(row._type === 'Customer', 'Expected Customer type');
-        assert(row._category === 'Price / Payment Issue', 'Expected Price / Payment Issue');
-      });
-      test('parseLiveJSON accepts array data', () => assert(parseLiveJSON([{'appointment_date':'2026-04-28','cancelation reason':'HQ: Weather'}]).length === 1, 'Expected one parsed row'));
-
-      const failed = results.filter(r => !r.pass);
-      console.table(results);
-      if(failed.length){
-        $('testPanel').classList.remove('hidden');
-        $('testPanel').innerHTML = `<div class="section-label test-fail">Smoke Tests Failed</div>` + failed.map(f => `<div class="small-muted">${escapeHtml(f.name)}: ${escapeHtml(f.message)}</div>`).join('');
-      }
-      return results;
-    }
-
     function bindEvents(){
-      document.querySelectorAll('[data-period]').forEach(btn => btn.addEventListener('click', () => {
-        state.period = btn.dataset.period;
-        document.querySelectorAll('[data-period]').forEach(b => b.classList.toggle('active', b === btn));
-        renderAll();
-      }));
-      document.querySelectorAll('[data-view-mode]').forEach(btn => btn.addEventListener('click', () => {
-        state.viewMode = btn.dataset.viewMode;
-        document.querySelectorAll('[data-view-mode]').forEach(b => b.classList.toggle('active', b === btn));
-        renderAll();
-      }));
-      document.querySelectorAll('[data-tech-mode]').forEach(btn => btn.addEventListener('click', () => {
-        state.techMode = btn.dataset.techMode;
-        document.querySelectorAll('[data-tech-mode]').forEach(b => b.classList.toggle('active', b === btn));
-        renderTechTable();
-      }));
-      ['dateFrom','dateTo','marketSelect','typeSelect','reasonSelect','categorySelect','statusSelect','techSelect','origTechSelect','timingSelect','withdrawalSelect'].forEach(id => $(id).addEventListener('change', () => { renderSelects(); applyFilters(); }));
-      $('resetBtn').addEventListener('click', resetFilters);
-      $('tableSearch').addEventListener('input', () => { state.detailPage = 1; renderDetailTable(); });
-      $('prevBtn').addEventListener('click', () => { state.detailPage--; renderDetailTable(); });
-      $('nextBtn').addEventListener('click', () => { state.detailPage++; renderDetailTable(); });
-      $('exportBtn').addEventListener('click', exportCSV);
-      document.querySelectorAll('th[data-sort]').forEach(th => th.addEventListener('click', () => {
-        const key = th.dataset.sort;
-        if(state.detailSort.key === key) state.detailSort.asc = !state.detailSort.asc;
-        else state.detailSort = {key, asc:true};
-        state.detailPage = 1;
-        renderDetailTable();
-      }));
+      document.querySelectorAll(".period-btn").forEach(btn => btn.addEventListener("click", () => { state.period = btn.dataset.period; render(); }));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => { state.tab = btn.dataset.tab; renderControls(); renderDebug(); }));
+      el("marketSelect").addEventListener("change", e => { state.market = e.target.value; render(); });
+      el("typeSelect").addEventListener("change", e => { state.type = e.target.value; render(); });
+      el("reasonSelect").addEventListener("change", e => { state.reason = e.target.value; render(); });
+      el("categorySelect").addEventListener("change", e => { state.category = e.target.value; render(); });
+      el("techSelect").addEventListener("change", e => { state.tech = e.target.value; render(); });
+      el("withdrawalSelect").addEventListener("change", e => { state.withdrawal = e.target.value; render(); });
+      el("dateFrom").addEventListener("change", e => { state.dateFrom = e.target.value; render(); });
+      el("dateTo").addEventListener("change", e => { state.dateTo = e.target.value; render(); });
+      el("resetBtn").addEventListener("click", resetFilters);
+      el("mixViewToggle").addEventListener("click", e => { const b = e.target.closest("[data-mix-view]"); if(!b) return; state.mixView = b.dataset.mixView; render(); });
+      el("trendMetricToggle").addEventListener("click", e => { const b = e.target.closest("[data-trend-metric]"); if(!b) return; state.trendMetric = b.dataset.trendMetric; render(); });
+      el("trendChartToggle").addEventListener("click", e => { const b = e.target.closest("[data-chart-type]"); if(!b) return; state.trendChartType = b.dataset.chartType; render(); });
+      el("tableSearch").addEventListener("input", e => { state.tableSearch = e.target.value; state.page = 1; renderDetailTable(); });
+      el("prevBtn").addEventListener("click", () => { state.page--; renderDetailTable(); });
+      el("nextBtn").addEventListener("click", () => { state.page++; renderDetailTable(); });
+      el("exportBtn").addEventListener("click", exportCSV);
+      document.querySelectorAll("th[data-sort]").forEach(th => th.addEventListener("click", () => { const key = th.dataset.sort; if(state.sortKey === key) state.sortAsc = !state.sortAsc; else { state.sortKey = key; state.sortAsc = true; } state.page = 1; renderDetailTable(); }));
     }
 
     async function init(){
-      try {
-        runTests();
-        bindEvents();
-        const rows = await loadData();
-        state.rawData = rows;
-        state.filteredData = rows;
-        renderSelects();
-        applyFilters();
+      bindEvents();
+      runTests();
+      try{
+        const raw = await loadData();
+        state.rawRows = raw;
+        state.rows = raw.map(normalizeRow).filter(r => r.appointment_date || r.jobnumber || r.full_reason);
+        if(!state.rows.length) throw new Error("No usable rows after normalization. Check field names in the JSON file.");
         revealApp();
-        setStatus('live', 'Live Data');
-        console.log('Loaded cancellation rows:', rows.length, rows[0]);
-      } catch(error){
-        console.error('Cancellation dashboard failed:', error);
-        showFatalError(error);
+        render();
+      } catch(err){
+        console.error("Cancellation dashboard failed:", err);
+        showError(err);
       }
     }
 
-    window.addEventListener('error', event => {
-      console.error('Global cancellation dashboard error:', event.error || event.message);
-      showFatalError(event.error || new Error(event.message));
+    window.addEventListener("error", event => {
+      console.error("Global dashboard error:", event.error || event.message);
+      showError(event.error || new Error(event.message || "Unknown script error"));
     });
-
-    window.addEventListener('unhandledrejection', event => {
-      console.error('Unhandled cancellation dashboard rejection:', event.reason);
-      showFatalError(event.reason || new Error('Unhandled promise rejection'));
+    window.addEventListener("unhandledrejection", event => {
+      console.error("Unhandled promise rejection:", event.reason);
+      showError(event.reason || new Error("Unhandled promise rejection"));
     });
-
-    window.addEventListener('DOMContentLoaded', init);
+    window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
