@@ -302,6 +302,35 @@
             <div class="chart-wrap"><canvas id="customerReasonsChart"></canvas></div>
           </div>
         </div>
+
+        <div class="split-grid">
+          <div class="card">
+            <div class="chart-head">
+              <div>
+                <div class="section-label">HQ Reason Trend</div>
+                <div class="subtitle" style="margin:0;">Top HQ cancellation reasons over time</div>
+              </div>
+              <div class="toggle-wrap" id="hqReasonTrendViewToggle">
+                <button class="toggle-btn active" data-hq-reason-view="count">Count</button>
+                <button class="toggle-btn" data-hq-reason-view="share">% Share</button>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="hqReasonTrendChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="chart-head">
+              <div>
+                <div class="section-label">Customer Reason Trend</div>
+                <div class="subtitle" style="margin:0;">Top customer cancellation reasons over time</div>
+              </div>
+              <div class="toggle-wrap" id="customerReasonTrendViewToggle">
+                <button class="toggle-btn active" data-customer-reason-view="count">Count</button>
+                <button class="toggle-btn" data-customer-reason-view="share">% Share</button>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="customerReasonTrendChart"></canvas></div>
+          </div>
+        </div>
       </div>
 
       <div id="trendsTab" class="hidden">
@@ -418,6 +447,8 @@
       mixView: "count",
       trendMetric: "total",
       trendChartType: "bar",
+      hqReasonTrendView: "count",
+      customerReasonTrendView: "count",
       market: "All Markets",
       type: "All Types",
       reason: "All Reasons",
@@ -670,6 +701,8 @@
       document.querySelectorAll("#mixViewToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.mixView === state.mixView));
       document.querySelectorAll("#trendMetricToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.trendMetric === state.trendMetric));
       document.querySelectorAll("#trendChartToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.chartType === state.trendChartType));
+      document.querySelectorAll("#hqReasonTrendViewToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.hqReasonView === state.hqReasonTrendView));
+      document.querySelectorAll("#customerReasonTrendViewToggle .toggle-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.customerReasonView === state.customerReasonTrendView));
     }
 
     function renderKPIs(){
@@ -678,7 +711,6 @@
         ["Total Cancellations", fmt(a.total), "All live rows after filters"],
         ["HQ Cancellations", fmt(a.hq), `${pct(a.hq,a.total)} of total`],
         ["Customer Cancellations", fmt(a.customer), `${pct(a.customer,a.total)} of total`],
-        ["Other / Uncategorized", fmt(a.other), `${pct(a.other,a.total)} of total`],
         ["Reschedules", fmt(a.reschedule), `${pct(a.reschedule,a.total)} of total`],
         ["True Withdrawals", fmt(a.trueWithdrawal), `${pct(a.trueWithdrawal,a.total)} of total`],
         ["Price Too High", fmt(a.priceTooHigh), `${pct(a.priceTooHigh,a.customer)} of customer`],
@@ -736,6 +768,78 @@
       const cust = groupCount(state.filtered.filter(r => r._type === "Customer"), r => r._reason).slice(0,12).reverse();
       makeChart("hqReasonsChart", { type:"bar", data:{ labels:hq.map(x=>x[0]), datasets:[{ label:"HQ", data:hq.map(x=>x[1]), backgroundColor:COLORS.hq }] }, options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, grid:{ display:false } }, y:{ grid:{ display:false } } } } });
       makeChart("customerReasonsChart", { type:"bar", data:{ labels:cust.map(x=>x[0]), datasets:[{ label:"Customer", data:cust.map(x=>x[1]), backgroundColor:COLORS.customer }] }, options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, grid:{ display:false } }, y:{ grid:{ display:false } } } } });
+    }
+
+    function topReasonsForType(type, limit = 5){
+      return groupCount(state.filtered.filter(r => r._type === type), r => r._reason).slice(0, limit).map(x => x[0]);
+    }
+
+    function reasonTrendData(type, viewMode){
+      const reasons = topReasonsForType(type, 5);
+      const periods = periodSeries(state.filtered);
+      const colorPool = type === "HQ"
+        ? ["#6366f1", "#7c3aed", "#0ea5e9", "#14b8a6", "#64748b"]
+        : ["#f59e0b", "#f97316", "#ef4444", "#d946ef", "#84cc16"];
+
+      return {
+        labels: periods.map(d => formatPeriodLabel(d.label)),
+        rawLabels: periods.map(d => d.label),
+        datasets: reasons.map((reason, idx) => ({
+          label: reason,
+          data: periods.map(period => {
+            const typeRows = period.rows.filter(r => r._type === type);
+            const reasonCount = typeRows.filter(r => r._reason === reason).length;
+            return viewMode === "share" ? pctNum(reasonCount, typeRows.length) : reasonCount;
+          }),
+          borderColor: colorPool[idx % colorPool.length],
+          backgroundColor: colorPool[idx % colorPool.length],
+          borderWidth: 2,
+          tension: 0.25,
+          pointRadius: 3,
+          pointHoverRadius: 5
+        }))
+      };
+    }
+
+    function renderReasonTrendCharts(){
+      const hqData = reasonTrendData("HQ", state.hqReasonTrendView);
+      const customerData = reasonTrendData("Customer", state.customerReasonTrendView);
+
+      makeChart("hqReasonTrendChart", {
+        type:"line",
+        data:{ labels:hqData.labels, datasets:hqData.datasets },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          interaction:{ mode:"index", intersect:false },
+          plugins:{
+            legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:11 } } },
+            tooltip:{ callbacks:{ title:(items) => hqData.rawLabels[items[0]?.dataIndex] || "" } }
+          },
+          scales:{
+            x:{ grid:{ display:false } },
+            y:{ beginAtZero:true, grid:{ display:false }, title:{ display:true, text:state.hqReasonTrendView === "share" ? "% of HQ" : "Count" } }
+          }
+        }
+      });
+
+      makeChart("customerReasonTrendChart", {
+        type:"line",
+        data:{ labels:customerData.labels, datasets:customerData.datasets },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          interaction:{ mode:"index", intersect:false },
+          plugins:{
+            legend:{ position:"bottom", labels:{ boxWidth:10, font:{ size:11 } } },
+            tooltip:{ callbacks:{ title:(items) => customerData.rawLabels[items[0]?.dataIndex] || "" } }
+          },
+          scales:{
+            x:{ grid:{ display:false } },
+            y:{ beginAtZero:true, grid:{ display:false }, title:{ display:true, text:state.customerReasonTrendView === "share" ? "% of Customer" : "Count" } }
+          }
+        }
+      });
     }
 
     function trendValue(d){
@@ -816,6 +920,7 @@
       renderInsights();
       renderMixChart();
       renderReasonCharts();
+      renderReasonTrendCharts();
       renderTrendChart();
       renderTimingAndWithdrawal();
       renderDetailTable();
@@ -854,6 +959,8 @@
       el("mixViewToggle").addEventListener("click", e => { const b = e.target.closest("[data-mix-view]"); if(!b) return; state.mixView = b.dataset.mixView; render(); });
       el("trendMetricToggle").addEventListener("click", e => { const b = e.target.closest("[data-trend-metric]"); if(!b) return; state.trendMetric = b.dataset.trendMetric; render(); });
       el("trendChartToggle").addEventListener("click", e => { const b = e.target.closest("[data-chart-type]"); if(!b) return; state.trendChartType = b.dataset.chartType; render(); });
+      el("hqReasonTrendViewToggle").addEventListener("click", e => { const b = e.target.closest("[data-hq-reason-view]"); if(!b) return; state.hqReasonTrendView = b.dataset.hqReasonView; render(); });
+      el("customerReasonTrendViewToggle").addEventListener("click", e => { const b = e.target.closest("[data-customer-reason-view]"); if(!b) return; state.customerReasonTrendView = b.dataset.customerReasonView; render(); });
       el("tableSearch").addEventListener("input", e => { state.tableSearch = e.target.value; state.page = 1; renderDetailTable(); });
       el("prevBtn").addEventListener("click", () => { state.page--; renderDetailTable(); });
       el("nextBtn").addEventListener("click", () => { state.page++; renderDetailTable(); });
