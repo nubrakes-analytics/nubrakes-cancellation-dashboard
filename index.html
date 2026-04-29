@@ -872,16 +872,8 @@
 const DATA_URL = "https://raw.githubusercontent.com/nubrakes-analytics/NuBrakes-Copilot/main/data/fact_nubrakes_cancellation_daily.json";
 
 // ============================================================
-// DATA SOURCE — fallback sample TSV
+// DATA SOURCE — live JSON only
 // ============================================================
-const rawTSV = `appointment_date\tmarket\tjobnumber\ttech_name\tcancelation reason\twithdrawn date\tstatus\tcancelation_time_frame_hours\twithdrawextrainfo\tlink\toriginal_technician\tappointment_create_date
-2026-04-28\tAtlanta\t508980\tJay Johnson\tHQ: Part availability\t2026-04-28\tWithdrawn: Reschedule\t124\t\thttps://ops.nubrakes.com/jobs/69e8f4eb1b07f18d18bdd0c6\tDominique Simpson\t2026-04-23
-2026-04-28\tAtlanta\t509770\tJay Johnson\tCustomer: Decided on alternative option\t2026-04-27\tWithdrawn\t62\t\thttps://ops.nubrakes.com/jobs/69ebd1141b07f18d18f2fb86\tJay Johnson\t2026-04-24
-2026-04-28\tAtlanta\t510090\tAndrew Gardner\tCustomer: Rebooked for another time\t2026-04-27\tWithdrawn: Reschedule\t51\t\thttps://ops.nubrakes.com/jobs/69ed0e921b07f18d18041abb\tDominique Simpson\t2026-04-25
-2026-04-28\tAtlanta\t509480\tDominique Simpson\tHQ: Part availability\t2026-04-28\tWithdrawn\t120\t\thttps://ops.nubrakes.com/jobs/69ea8cf61b07f18d18de0249\tJay Johnson\t2026-04-23
-2026-04-28\tAtlanta\t510373\tDominique Simpson\tCustomer: Price too high\t2026-04-27\tWithdrawn\t5\t\thttps://ops.nubrakes.com/jobs/69ee78291b07f18d181448fd\tJay Johnson\t2026-04-27
-2026-04-28\tAustin\t509245\tRichard Forcey\tCustomer: Schedule conflict\t2026-04-25\tWithdrawn: Reschedule\t54\t\thttps://ops.nubrakes.com/jobs/69ea068e1b07f18d18cd59d3\tRichard Forcey\t2026-04-23
-2026-04-28\tDallas\t510520\tPablo Chavez\tCustomer: Schedule conflict\t2026-04-28\tWithdrawn: Reschedule\t21\t\thttps://ops.nubrakes.com/jobs/69ef7fef4218fdadd09313f1\tKyle Monks\t2026-04-27`;
 
 // ============================================================
 // DERIVED FIELD HELPERS
@@ -923,35 +915,6 @@ function timingBucket(hours) {
   if (h <= 72) return '49–72 hrs';
   if (h <= 120) return '73–120 hrs';
   return '121+ hrs';
-}
-
-function parseTSV(tsv) {
-  const lines = tsv.trim().split('
-');
-  const headers = lines[0].split('	').map(h => h.trim());
-  return lines.slice(1).map(line => {
-    const vals = line.split('	');
-    const row = {};
-    headers.forEach((h, i) => { row[h] = (vals[i] || '').trim(); });
-
-    const reason = row['cancelation reason'] || '';
-    let type = 'Other';
-    if (reason.startsWith('HQ:')) type = 'HQ';
-    else if (reason.startsWith('Customer:')) type = 'Customer';
-
-    const cleanReason = reason.startsWith('HQ:') ? reason.slice(3).trim() : reason.startsWith('Customer:') ? reason.slice(9).trim() : reason;
-    const category = HQ_CATEGORIES[reason] || CUST_CATEGORIES[reason] || 'Uncategorized';
-    const isReschedule = (row['status'] || '').includes('Reschedule');
-
-    row._type = type;
-    row._reason = cleanReason;
-    row._category = category;
-    row._fullReason = reason;
-    row._isReschedule = isReschedule;
-    row._withdrawalType = isReschedule ? 'Reschedule' : 'True Withdrawal';
-    row._timingBucket = timingBucket(row['cancelation_time_frame_hours']);
-    return row;
-  });
 }
 
 function firstVal(obj, keys, fallback = '') {
