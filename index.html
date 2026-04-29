@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cancellation Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f8fafc;
+    --surface:#ffffff;
+    --card:#ffffff;
+    --text:#111827;
+    --text-muted:#6b7280;
+    --text-light:#9ca3af;
+    --soft:#9ca3af;
+    --border:#e5e7eb;
+    --border-soft:#f1f5f9;
+
+    --hq:#6366f1;
+    --hq-light:#eef2ff;
+    --hq-mid:#6366f1;
+
+    --customer:#f59e0b;
+    --customer-light:#fff7ed;
+    --customer-mid:#f59e0b;
+
+    --other:#64748b;
+    --other-light:#f8fafc;
+
+    --danger:#f43f5e;
+    --success:#10b981;
+    --dark:#111827;
+
+    --radius:12px;
+    --shadow:0 1px 4px rgba(0,0,0,0.06);
+    --shadow-sm:0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+
+  html, body {
+    min-height:100%;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    font-size:14px;
+    line-height:1.5;
+  }
+
+  button, input, select { font:inherit; }
+
+  .header {
+    background:transparent;
+    border-bottom:none;
+    padding:20px 16px 0;
+    position:static;
+  }
+
+  .header-inner {
+    max-width:1240px;
+    margin:0 auto 18px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    height:auto;
+  }
+
+  .header-title {
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:0;
+    color:var(--text);
+    margin:0;
+  }
+
+  .header-title span { color:var(--text); }
+
+  .header-meta {
+    margin-top:3px;
+    font-size:12px;
+    color:var(--text-muted);
+  }
+
+  .main {
+    max-width:1240px;
+    margin:0 auto;
+    padding:0 16px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+
+  .global-toggle,
+  .chart-toggle,
+  .tech-toggle {
+    display:flex;
+    gap:4px;
+    background:#f1f5f9;
+    border-radius:8px;
+    padding:3px;
+    border:none;
+    overflow:visible;
+  }
+
+  .global-toggle button,
+  .chart-toggle button,
+  .tech-toggle button {
+    padding:5px 12px;
+    border-radius:6px;
+    border:none;
+    background:transparent;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--soft);
+    transition:all .15s ease;
+  }
+
+  .global-toggle button.active,
+  .chart-toggle button.active,
+  .tech-toggle button.active {
+    background:#fff;
+    color:var(--text);
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .filters-bar {
+    background:transparent;
+    border:none;
+    border-radius:0;
+    padding:0;
+    box-shadow:none;
+  }
+
+  .filters-title {
+    font-size:10px;
+    font-weight:600;
+    color:var(--soft);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-bottom:8px;
+  }
+
+  .filters-grid {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:flex-end;
+  }
+
+  .filter-group {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+
+  .filter-group label {
+    font-size:10px;
+    font-weight:600;
+    color:var(--soft);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+
+  .filter-group select,
+  .filter-group input[type="date"],
+  .filter-group input[type="text"],
+  .search-box {
+    padding:9px 12px;
+    border-radius:8px;
+    border:1.5px solid var(--border);
+    font-size:13px;
+    color:#374151;
+    background:#fff;
+    outline:none;
+    min-width:150px;
+    max-width:100%;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .filter-group select:focus,
+  .filter-group input:focus,
+  .search-box:focus { border-color:var(--hq); }
+
+  .btn-reset,
+  .btn-export {
+    padding:9px 14px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+
+  .btn-reset {
+    background:#fff;
+    color:var(--text-muted);
+    border:1.5px solid var(--border);
+  }
+
+  .btn-reset:hover {
+    color:var(--danger);
+    border-color:#fecdd3;
+    background:#fff1f2;
+  }
+
+  .btn-export {
+    background:var(--dark);
+    color:#fff;
+    border:none;
+  }
+
+  .btn-export:hover { background:#000; }
+
+  .kpi-grid {
+    display:grid;
+    gap:12px;
+    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+  }
+
+  .kpi-card {
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--border-soft);
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .kpi-card::before { display:none; }
+
+  .kpi-label {
+    font-size:10px;
+    font-weight:600;
+    color:var(--soft);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+
+  .kpi-value {
+    font-size:22px;
+    font-weight:700;
+    color:var(--text);
+    letter-spacing:0;
+    line-height:1.2;
+  }
+
+  .kpi-value.hq { color:var(--hq); }
+  .kpi-value.customer { color:var(--customer); }
+
+  .kpi-sub {
+    margin-top:2px;
+    font-size:11px;
+    color:var(--text-muted);
+  }
+
+  .insights-panel {
+    background:#fff;
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    box-shadow:var(--shadow);
+    color:var(--text);
+  }
+
+  .insights-header {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:12px;
+  }
+
+  .insights-badge {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:3px 10px;
+    border-radius:20px;
+    border:1px solid #c7d2fe;
+    background:#eef2ff;
+    color:#4338ca;
+    font-size:11px;
+    font-weight:600;
+    text-transform:none;
+    letter-spacing:0;
+  }
+
+  .insights-title {
+    font-size:13px;
+    font-weight:700;
+    color:var(--text);
+  }
+
+  .insights-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:8px;
+  }
+
+  .insight-item {
+    background:#f8fafc;
+    border:1px solid var(--border-soft);
+    border-radius:10px;
+    padding:10px 12px;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+
+  .insight-dot {
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    margin-top:5px;
+    flex-shrink:0;
+  }
+
+  .insight-dot.hq { background:var(--hq); }
+  .insight-dot.customer { background:var(--customer); }
+  .insight-dot.neutral { background:var(--other); }
+
+  .insight-text {
+    font-size:12px;
+    color:var(--text-muted);
+    line-height:1.45;
+  }
+
+  .insight-text strong { color:var(--text); }
+
+  .section-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+
+  .section-title {
+    font-size:13px;
+    font-weight:700;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .section-tag {
+    display:inline-flex;
+    align-items:center;
+    padding:3px 8px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0;
+    text-transform:none;
+  }
+
+  .section-tag.primary {
+    background:#eef2ff;
+    color:#4338ca;
+  }
+
+  .section-tag.secondary {
+    background:#fff7ed;
+    color:#c2410c;
+  }
+
+  .section-sub {
+    font-size:12px;
+    color:var(--text-muted);
+    margin:3px 0 12px;
+  }
+
+  .card {
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:16px 18px 14px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--border-soft);
+  }
+
+  .chart-grid-2 {
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:16px;
+  }
+
+  .chart-grid-3 {
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:16px;
+  }
+
+  .chart-wrap { position:relative; }
+  .chart-wrap canvas { max-height:300px; }
+  .chart-wrap.tall canvas { max-height:360px; }
+  .chart-wrap.short canvas { max-height:220px; }
+
+  .table-wrap { overflow-x:auto; }
+
+  table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+  }
+
+  th {
+    background:#f8fafc;
+    padding:9px 10px;
+    text-align:left;
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--soft);
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+    white-space:nowrap;
+    user-select:none;
+  }
+
+  th:hover { color:var(--text); }
+  th .sort-icon { margin-left:4px; opacity:0.4; }
+  th.sorted .sort-icon { opacity:1; color:var(--text); }
+
+  td {
+    padding:9px 10px;
+    border-bottom:1px solid var(--border-soft);
+    color:var(--text);
+    vertical-align:top;
+  }
+
+  tr:hover td { background:#f8fafc; }
+  tr:last-child td { border-bottom:none; }
+
+  td.hq-cell {
+    color:var(--hq);
+    font-weight:700;
+  }
+
+  td.customer-cell {
+    color:var(--customer);
+    font-weight:700;
+  }
+
+  .badge {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:3px 9px;
+    border-radius:20px;
+    border:1px solid;
+    font-size:11px;
+    font-weight:600;
+  }
+
+  .badge.hq {
+    background:#eef2ff;
+    border-color:#c7d2fe;
+    color:#4338ca;
+  }
+
+  .badge.customer {
+    background:#fff7ed;
+    border-color:#fed7aa;
+    color:#c2410c;
+  }
+
+  .badge.other {
+    background:#f8fafc;
+    border-color:#e5e7eb;
+    color:#64748b;
+  }
+
+  .table-toolbar {
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .search-box { width:260px; }
+
+  .pager {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:12px;
+    font-size:12px;
+    color:var(--text-muted);
+  }
+
+  .pager button {
+    padding:5px 12px;
+    border-radius:20px;
+    border:1.5px solid var(--border);
+    background:#fff;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--text-muted);
+  }
+
+  .pager button:hover:not(:disabled) {
+    border-color:var(--text);
+    color:var(--text);
+  }
+
+  .pager button:disabled {
+    opacity:.4;
+    cursor:default;
+  }
+
+  .empty-state {
+    padding:32px 16px;
+    text-align:center;
+    color:var(--text-muted);
+    font-size:13px;
+  }
+
+  .empty-state .empty-icon {
+    font-size:24px;
+    margin-bottom:6px;
+  }
+
+  .link-cell a {
+    color:var(--hq);
+    text-decoration:none;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size:11px;
+    font-weight:600;
+  }
+
+  .link-cell a:hover { text-decoration:underline; }
+
+  .mono {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size:11px;
+  }
+
+  @media (max-width:1023px) {
+    .chart-grid-2,
+    .chart-grid-3 { grid-template-columns:1fr; }
+  }
+
+  @media (max-width:639px) {
+    .header { padding:12px 12px 0; }
+    .header-inner { flex-direction:column; align-items:stretch; }
+    .main { padding:0 12px 20px; gap:16px; }
+    .header-title { font-size:18px; }
+    .filters-grid { align-items:stretch; }
+    .filter-group,
+    .filter-group select,
+    .filter-group input,
+    .search-box { width:100%; min-width:100%; }
+    .kpi-grid { grid-template-columns:1fr; }
+    .table-toolbar { align-items:stretch; }
+    .btn-export { width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Cancellation <span>Dashboard</span></div>
+      <div class="header-meta" id="headerMeta">Loading…</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--text-muted);font-weight:600;">Chart View</span>
+      <div class="global-toggle">
+        <button class="active" id="gToggleCount" onclick="setGlobalMode('count')">Raw Count</button>
+        <button id="gTogglePct" onclick="setGlobalMode('pct')">% of Total</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="filters-bar">
+    <div class="filters-title">Filters</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <span style="font-size:11px;color:var(--text-muted);font-weight:600;">Trend Grain</span>
+      <div class="global-toggle">
+        <button class="active" id="pToggleDay" onclick="setPeriodMode('day')">Day</button>
+        <button id="pToggleWeek" onclick="setPeriodMode('week')">Week</button>
+        <button id="pToggleMonth" onclick="setPeriodMode('month')">Month</button>
+      </div>
+    </div>
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label>Date From</label>
+        <input type="date" id="fDateFrom" onchange="applyFilters()">
+      </div>
+      <div class="filter-group">
+        <label>Date To</label>
+        <input type="date" id="fDateTo" onchange="applyFilters()">
+      </div>
+      <div class="filter-group">
+        <label>Market</label>
+        <select id="fMarket" onchange="applyFilters()"><option value="">All Markets</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Cancellation Type</label>
+        <select id="fType" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="HQ">HQ</option>
+          <option value="Customer">Customer</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Cancellation Reason</label>
+        <select id="fReason" onchange="applyFilters()"><option value="">All Reasons</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Reason Category</label>
+        <select id="fCategory" onchange="applyFilters()"><option value="">All Categories</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="fStatus" onchange="applyFilters()"><option value="">All Statuses</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Technician</label>
+        <select id="fTech" onchange="applyFilters()"><option value="">All Technicians</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Original Technician</label>
+        <select id="fOrigTech" onchange="applyFilters()"><option value="">All</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Timing Bucket</label>
+        <select id="fTiming" onchange="applyFilters()"><option value="">All Buckets</option></select>
+      </div>
+      <div class="filter-group">
+        <label>Withdrawal Type</label>
+        <select id="fWithdrawal" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="Reschedule">Reschedule</option>
+          <option value="True Withdrawal">True Withdrawal</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetFilters()">Reset</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="insights-panel">
+    <div class="insights-header">
+      <span class="insights-badge">Auto Insights</span>
+      <span class="insights-title">Operational Summary</span>
+    </div>
+    <div class="insights-grid" id="insightsGrid"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Cancellation Mix Trend <span class="section-tag primary">HQ Primary</span></div>
+        <div class="section-sub">HQ vs Customer cancellations over time. Toggle between raw count and percent share.</div>
+      </div>
+      <div class="chart-toggle">
+        <button class="active" id="trendToggleCount" onclick="setTrendMode('count')">Count</button>
+        <button id="trendTogglePct" onclick="setTrendMode('pct')">%</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+  </div>
+
+  <div>
+    <div class="section-header" style="margin-bottom:12px;">
+      <div>
+        <div class="section-title" style="font-size:16px;">HQ Cancellation Overview <span class="section-tag primary">Primary Focus</span></div>
+        <div class="section-sub">HQ cancellations are controllable operational cancellations and should be prioritized for review.</div>
+      </div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="card">
+        <div class="section-title" style="margin-bottom:4px;">HQ Cancellation Reasons</div>
+        <div class="section-sub">By reason, sorted descending.</div>
+        <div class="chart-wrap tall"><canvas id="chartHQReasons"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="section-title" style="margin-bottom:4px;">HQ Cancellation Categories</div>
+        <div class="section-sub">Grouped operational themes.</div>
+        <div class="chart-wrap tall"><canvas id="chartHQCategories"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Market HQ Cancellation Breakdown</div>
+        <div class="section-sub">Markets driving the most HQ cancellations, sorted by HQ volume.</div>
+      </div>
+    </div>
+    <div class="chart-grid-3">
+      <div class="chart-wrap"><canvas id="chartMarket"></canvas></div>
+      <div class="table-wrap">
+        <table id="marketTable">
+          <thead><tr>
+            <th onclick="sortTable('marketTable',0)">Market<span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('marketTable',1)">Total<span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('marketTable',2)">HQ<span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('marketTable',3)">HQ%<span class="sort-icon">↕</span></th>
+            <th>Top HQ Reason</th>
+            <th>Top HQ Category</th>
+          </tr></thead>
+          <tbody id="marketTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Technician HQ Cancellation View</div>
+        <div class="section-sub">Identify assigned or original technicians associated with high HQ cancellations.</div>
+      </div>
+      <div class="tech-toggle">
+        <button class="active" id="techToggleAssigned" onclick="setTechMode('assigned')">Assigned Tech</button>
+        <button id="techToggleOriginal" onclick="setTechMode('original')">Original Tech</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="techTable">
+        <thead><tr>
+          <th onclick="sortTable('techTable',0)">Technician<span class="sort-icon">↕</span></th>
+          <th onclick="sortTable('techTable',1)">Total<span class="sort-icon">↕</span></th>
+          <th onclick="sortTable('techTable',2)">HQ<span class="sort-icon">↕</span></th>
+          <th onclick="sortTable('techTable',3)">Customer<span class="sort-icon">↕</span></th>
+          <th onclick="sortTable('techTable',4)">HQ%<span class="sort-icon">↕</span></th>
+          <th>Top HQ Reason</th>
+          <th>Top HQ Category</th>
+        </tr></thead>
+        <tbody id="techTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-header" style="margin-bottom:12px;">
+      <div>
+        <div class="section-title" style="font-size:16px;">Customer Cancellation Insights <span class="section-tag secondary">Secondary Signals</span></div>
+        <div class="section-sub">Customer cancellations are demand and customer behavior signals. Monitor pricing, scheduling, and alternative-option trends.</div>
+      </div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="card">
+        <div class="section-title" style="margin-bottom:4px;">Customer Cancellation Reasons</div>
+        <div class="section-sub">Key signals: Price too high, Schedule conflict, No show, and alternative options.</div>
+        <div class="chart-wrap tall"><canvas id="chartCustReasons"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="section-title" style="margin-bottom:4px;">Customer Cancellation Categories</div>
+        <div class="section-sub">Grouped demand and behavior themes.</div>
+        <div class="chart-wrap tall"><canvas id="chartCustCategories"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-grid-2">
+    <div class="card">
+      <div class="section-title" style="margin-bottom:4px;">Price Too High — Trend <span class="section-tag secondary">Pricing Signal</span></div>
+      <div class="section-sub">Monitor whether price-driven customer cancellations are growing over time.</div>
+      <div class="chart-wrap short"><canvas id="chartPrice"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:4px;">Cancellation Timing Buckets</div>
+      <div class="section-sub">How far in advance cancellations are happening, split by HQ vs Customer.</div>
+      <div class="chart-wrap short"><canvas id="chartTiming"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid-2">
+    <div class="card">
+      <div class="section-title" style="margin-bottom:4px;">Reschedule vs True Withdrawal</div>
+      <div class="section-sub">A high reschedule rate means gross cancellations may overstate true lost demand.</div>
+      <div class="chart-wrap short"><canvas id="chartReschedule"></canvas></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+      <div class="section-title" style="margin-bottom:16px;">Withdrawal Breakdown</div>
+      <div id="withdrawalBreakdown"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" style="margin-bottom:4px;">Detailed Cancellation Table</div>
+    <div class="section-sub" style="margin-bottom:14px;">All cancellations matching active filters. Click job number to open in ops system.</div>
+    <div class="table-toolbar">
+      <input class="search-box" type="text" id="tableSearch" placeholder="Search jobs, techs, markets…" oninput="detailPage=1; renderDetailTable()">
+      <button class="btn-export" onclick="exportCSV()">Export CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortDetailTable(0)">Date<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(1)">Market<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(2)">Job #<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(3)">Tech<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(4)">Orig Tech<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(5)">Type<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(6)">Reason<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(7)">Category<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(8)">Status<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(9)">Timing Bucket<span class="sort-icon">↕</span></th>
+          <th onclick="sortDetailTable(10)">Hrs<span class="sort-icon">↕</span></th>
+          <th>Withdrawn Date</th>
+          <th>Created Date</th>
+        </tr></thead>
+        <tbody id="detailTableBody"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <button onclick="changePage(-1)" id="prevBtn">← Prev</button>
+      <span id="pageInfo"></span>
+      <button onclick="changePage(1)" id="nextBtn">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA SOURCE — live JSON with TSV fallback
+// ============================================================
+const DATA_URL = "https://raw.githubusercontent.com/nubrakes-analytics/NuBrakes-Copilot/main/data/fact_nubrakes_cancellation_daily.json";
+
+// ============================================================
+// DATA SOURCE — fallback sample TSV
+// ============================================================
+const rawTSV = `appointment_date\tmarket\tjobnumber\ttech_name\tcancelation reason\twithdrawn date\tstatus\tcancelation_time_frame_hours\twithdrawextrainfo\tlink\toriginal_technician\tappointment_create_date
+2026-04-28\tAtlanta\t508980\tJay Johnson\tHQ: Part availability\t2026-04-28\tWithdrawn: Reschedule\t124\t\thttps://ops.nubrakes.com/jobs/69e8f4eb1b07f18d18bdd0c6\tDominique Simpson\t2026-04-23
+2026-04-28\tAtlanta\t509770\tJay Johnson\tCustomer: Decided on alternative option\t2026-04-27\tWithdrawn\t62\t\thttps://ops.nubrakes.com/jobs/69ebd1141b07f18d18f2fb86\tJay Johnson\t2026-04-24
+2026-04-28\tAtlanta\t510090\tAndrew Gardner\tCustomer: Rebooked for another time\t2026-04-27\tWithdrawn: Reschedule\t51\t\thttps://ops.nubrakes.com/jobs/69ed0e921b07f18d18041abb\tDominique Simpson\t2026-04-25
+2026-04-28\tAtlanta\t509480\tDominique Simpson\tHQ: Part availability\t2026-04-28\tWithdrawn\t120\t\thttps://ops.nubrakes.com/jobs/69ea8cf61b07f18d18de0249\tJay Johnson\t2026-04-23
+2026-04-28\tAtlanta\t510373\tDominique Simpson\tCustomer: Price too high\t2026-04-27\tWithdrawn\t5\t\thttps://ops.nubrakes.com/jobs/69ee78291b07f18d181448fd\tJay Johnson\t2026-04-27
+2026-04-28\tAustin\t509245\tRichard Forcey\tCustomer: Schedule conflict\t2026-04-25\tWithdrawn: Reschedule\t54\t\thttps://ops.nubrakes.com/jobs/69ea068e1b07f18d18cd59d3\tRichard Forcey\t2026-04-23
+2026-04-28\tDallas\t510520\tPablo Chavez\tCustomer: Schedule conflict\t2026-04-28\tWithdrawn: Reschedule\t21\t\thttps://ops.nubrakes.com/jobs/69ef7fef4218fdadd09313f1\tKyle Monks\t2026-04-27`;
+
+// ============================================================
+// DERIVED FIELD HELPERS
+// ============================================================
+const HQ_CATEGORIES = {
+  'HQ: Part availability': 'Parts Issue',
+  'HQ: Incorrect parts': 'Parts Issue',
+  'HQ: Technician could not complete service': 'Technician / Labor Issue',
+  'HQ: Technician availability': 'Technician / Labor Issue',
+  'HQ: Did not arrive within the service window': 'Technician / Labor Issue',
+  'HQ: Overbooked Time Slot': 'Scheduling / Capacity Issue',
+  'HQ: Schedule Optimization (Unserved)': 'Scheduling / Capacity Issue',
+  'HQ: VIOC Inspection Scheduling': 'Scheduling / Capacity Issue',
+  'HQ: Drive time too long': 'Route / Location Issue',
+  'HQ: Weather': 'Weather / External Issue',
+  'HQ: Margin Alert': 'Margin / Profitability Issue',
+};
+
+const CUST_CATEGORIES = {
+  'Customer: Price too high': 'Price / Payment Issue',
+  'Customer: Refuses to pay': 'Price / Payment Issue',
+  'Customer: Schedule conflict': 'Scheduling Issue',
+  'Customer: Rebooked for another time': 'Scheduling Issue',
+  'Customer: Not available during service window': 'Scheduling Issue',
+  'Customer: No show or no response': 'Customer Unresponsive',
+  'Customer: Did not provide reason': 'Customer Unresponsive',
+  'Customer: Decided on alternative option': 'Customer Chose Alternative',
+  'Customer: Could not access vehicle': 'Missing Information / Access Issue',
+  'Customer: Did not provide VIN or LP': 'Missing Information / Access Issue',
+};
+
+const TIMING_BUCKETS = ['0–24 hrs', '25–48 hrs', '49–72 hrs', '73–120 hrs', '121+ hrs'];
+
+function timingBucket(hours) {
+  const h = parseFloat(hours);
+  if (isNaN(h)) return 'Unknown';
+  if (h <= 24) return '0–24 hrs';
+  if (h <= 48) return '25–48 hrs';
+  if (h <= 72) return '49–72 hrs';
+  if (h <= 120) return '73–120 hrs';
+  return '121+ hrs';
+}
+
+function parseTSV(tsv) {
+  const lines = tsv.trim().split('
+');
+  const headers = lines[0].split('	').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split('	');
+    const row = {};
+    headers.forEach((h, i) => { row[h] = (vals[i] || '').trim(); });
+
+    const reason = row['cancelation reason'] || '';
+    let type = 'Other';
+    if (reason.startsWith('HQ:')) type = 'HQ';
+    else if (reason.startsWith('Customer:')) type = 'Customer';
+
+    const cleanReason = reason.startsWith('HQ:') ? reason.slice(3).trim() : reason.startsWith('Customer:') ? reason.slice(9).trim() : reason;
+    const category = HQ_CATEGORIES[reason] || CUST_CATEGORIES[reason] || 'Uncategorized';
+    const isReschedule = (row['status'] || '').includes('Reschedule');
+
+    row._type = type;
+    row._reason = cleanReason;
+    row._category = category;
+    row._fullReason = reason;
+    row._isReschedule = isReschedule;
+    row._withdrawalType = isReschedule ? 'Reschedule' : 'True Withdrawal';
+    row._timingBucket = timingBucket(row['cancelation_time_frame_hours']);
+    return row;
+  });
+}
+
+function firstVal(obj, keys, fallback = '') {
+  for (const k of keys) {
+    if (obj && obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') return obj[k];
+  }
+  return fallback;
+}
+
+function dateOnly(v) {
+  if (!v) return '';
+  const s = String(v).trim();
+  if (s.length >= 10 && s.charAt(4) === '-' && s.charAt(7) === '-') return s.slice(0, 10);
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s.slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function enrichCancellationRow(row) {
+  const reason = row['cancelation reason'] || '';
+  let type = 'Other';
+  if (reason.startsWith('HQ:')) type = 'HQ';
+  else if (reason.startsWith('Customer:')) type = 'Customer';
+
+  row._type = type;
+  row._reason = reason.startsWith('HQ:') ? reason.slice(3).trim() : reason.startsWith('Customer:') ? reason.slice(9).trim() : reason;
+  row._category = HQ_CATEGORIES[reason] || CUST_CATEGORIES[reason] || 'Uncategorized';
+  row._fullReason = reason;
+  row._isReschedule = (row.status || '').includes('Reschedule');
+  row._withdrawalType = row._isReschedule ? 'Reschedule' : 'True Withdrawal';
+  row._timingBucket = timingBucket(row.cancelation_time_frame_hours);
+  return row;
+}
+
+function normalizeLiveRow(r) {
+  const row = {
+    appointment_date: dateOnly(firstVal(r, ['appointment_date','Appointment Date','appointmentDate','date','Date','Day','day','apt_date','startdate'], '')),
+    market: String(firstVal(r, ['market','Market'], 'Unmapped Market')).trim() || 'Unmapped Market',
+    jobnumber: String(firstVal(r, ['jobnumber','job_number','jobNumber','Job Number','job','Job'], '')).trim(),
+    tech_name: String(firstVal(r, ['tech_name','technician','Technician','assigned_technician','assignedTechnician','tech'], '')).trim(),
+    'cancelation reason': String(firstVal(r, ['cancelation reason','cancelation_reason','cancellation_reason','Cancelation Reason','Cancellation Reason','reason','Reason'], '')).trim(),
+    'withdrawn date': dateOnly(firstVal(r, ['withdrawn date','withdrawn_date','withdrawDate','Withdrawn Date','withdrawnat','withdrawnAt'], '')),
+    status: String(firstVal(r, ['status','Status'], '')).trim(),
+    cancelation_time_frame_hours: String(firstVal(r, ['cancelation_time_frame_hours','cancellation_time_frame_hours','Cancelation_Time_Frame_hours','cancellationTimeFrameHours'], '')).trim(),
+    withdrawextrainfo: String(firstVal(r, ['withdrawextrainfo','withdraw_extra_info','withdrawExtraInfo','extra_info'], '')).trim(),
+    link: String(firstVal(r, ['link','LINK','url','URL'], '')).trim(),
+    original_technician: String(firstVal(r, ['original_technician','Original Technician','originalTechnician','original_tech'], '')).trim(),
+    appointment_create_date: dateOnly(firstVal(r, ['appointment_create_date','appointmentCreatedDate','createdat','createdAt','Created Date'], ''))
+  };
+  return enrichCancellationRow(row);
+}
+
+function parseLiveJSON(data) {
+  const arr = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+  return arr.map(normalizeLiveRow).filter(r => r.appointment_date || r.jobnumber || r._fullReason);
+}
+
+function getWeekStart(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  if (isNaN(d.getTime())) return dateStr || 'Unknown';
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getPeriodKey(row) {
+  const d = row.appointment_date || '';
+  if (!d) return 'Unknown';
+  if (periodMode === 'week') return getWeekStart(d);
+  if (periodMode === 'month') return d.slice(0, 7);
+  return d;
+}
+
+function getPeriodLabel() {
+  if (periodMode === 'week') return 'Week Beginning';
+  if (periodMode === 'month') return 'Month';
+  return 'Day';
+}
+
+function formatPeriodLabel(key) {
+  if (!key || key === 'Unknown') return 'Unknown';
+  if (periodMode === 'month') {
+    const d = new Date(`${key}-01T12:00:00`);
+    return isNaN(d.getTime()) ? key : d.toLocaleDateString('en-US', { month:'short', year:'numeric' });
+  }
+  if (periodMode === 'week') return `Wk ${key}`;
+  return key;
+}
+
+async function loadLiveData() {
+  const res = await fetch(DATA_URL + '?t=' + Date.now(), { cache:'no-store' });
+  if (!res.ok) throw new Error(`Live data load failed: ${res.status}`);
+  const json = await res.json();
+  const rows = parseLiveJSON(json);
+  if (!rows.length) throw new Error('Live data returned no usable rows');
+  return rows;
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let allData = [];
+let filteredData = [];
+let globalMode = 'count';
+let trendMode = 'count';
+let periodMode = 'day';
+let techMode = 'assigned';
+let detailPage = 1;
+const PAGE_SIZE = 20;
+const charts = {};
+let detailSortState = { col: -1, asc: true };
+
+// ============================================================
+// UTILS
+// ============================================================
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, s => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[s]));
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/`/g, '&#96;');
+}
+
+function pctValue(n, total) {
+  return total ? +(((n / total) * 100).toFixed(1)) : 0;
+}
+
+function count(arr, fn) {
+  const m = {};
+  arr.forEach(r => {
+    const k = fn(r);
+    if (k) m[k] = (m[k] || 0) + 1;
+  });
+  return m;
+}
+
+function topKey(obj) {
+  return Object.entries(obj).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+}
+
+function pct(n, total) {
+  return total ? ((n / total) * 100).toFixed(1) + '%' : '0%';
+}
+
+function fmt(n) {
+  return Number(n || 0).toLocaleString();
+}
+
+function sortedEntries(obj, desc = true) {
+  return Object.entries(obj).sort((a, b) => desc ? b[1] - a[1] : a[1] - b[1]);
+}
+
+const HQ_COLOR = '#6366f1';
+const CUST_COLOR = '#f59e0b';
+const OTHER_COLOR = '#94a3b8';
+
+function makeChart(id, config) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, config);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  try {
+    allData = await loadLiveData();
+    console.log('Cancellation dashboard loaded live rows:', allData.length);
+    console.log('Cancellation dashboard sample row:', allData[0]);
+  } catch (err) {
+    console.error('Cancellation live data load failed. Using fallback sample rows.', err);
+    allData = parseTSV(rawTSV);
+  }
+
+  populateFilterOptions();
+  applyFilters();
+}
+
+function populateFilterOptions() {
+  const markets = [...new Set(allData.map(r => r.market).filter(Boolean))].sort();
+  const reasons = [...new Set(allData.map(r => r._fullReason).filter(Boolean))].sort();
+  const categories = [...new Set(allData.map(r => r._category).filter(Boolean))].sort();
+  const statuses = [...new Set(allData.map(r => r.status).filter(Boolean))].sort();
+  const techs = [...new Set(allData.map(r => r.tech_name).filter(Boolean))].sort();
+  const origTechs = [...new Set(allData.map(r => r.original_technician).filter(Boolean))].sort();
+
+  fillSelect('fMarket', markets);
+  fillSelect('fReason', reasons);
+  fillSelect('fCategory', categories);
+  fillSelect('fStatus', statuses);
+  fillSelect('fTech', techs);
+  fillSelect('fOrigTech', origTechs);
+  fillSelect('fTiming', TIMING_BUCKETS);
+}
+
+function fillSelect(id, items) {
+  const sel = document.getElementById(id);
+  const first = sel.querySelector('option')?.outerHTML || '<option value="">All</option>';
+  sel.innerHTML = first;
+  items.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+function applyFilters() {
+  const from = document.getElementById('fDateFrom').value;
+  const to = document.getElementById('fDateTo').value;
+  const market = document.getElementById('fMarket').value;
+  const type = document.getElementById('fType').value;
+  const reason = document.getElementById('fReason').value;
+  const category = document.getElementById('fCategory').value;
+  const status = document.getElementById('fStatus').value;
+  const tech = document.getElementById('fTech').value;
+  const origTech = document.getElementById('fOrigTech').value;
+  const timing = document.getElementById('fTiming').value;
+  const withdrawal = document.getElementById('fWithdrawal').value;
+
+  filteredData = allData.filter(r => {
+    if (from && r.appointment_date < from) return false;
+    if (to && r.appointment_date > to) return false;
+    if (market && r.market !== market) return false;
+    if (type && r._type !== type) return false;
+    if (reason && r._fullReason !== reason) return false;
+    if (category && r._category !== category) return false;
+    if (status && r.status !== status) return false;
+    if (tech && r.tech_name !== tech) return false;
+    if (origTech && r.original_technician !== origTech) return false;
+    if (timing && r._timingBucket !== timing) return false;
+    if (withdrawal && r._withdrawalType !== withdrawal) return false;
+    return true;
+  });
+
+  detailPage = 1;
+  updateAll();
+}
+
+function resetFilters() {
+  ['fDateFrom','fDateTo','fMarket','fType','fReason','fCategory','fStatus','fTech','fOrigTech','fTiming','fWithdrawal']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('tableSearch').value = '';
+  detailPage = 1;
+  applyFilters();
+}
+
+function updateAll() {
+  updateHeaderMeta();
+  renderKPIs();
+  renderInsights();
+  renderTrendChart();
+  renderHQReasons();
+  renderHQCategories();
+  renderMarketChart();
+  renderMarketTable();
+  renderTechTable();
+  renderCustReasons();
+  renderCustCategories();
+  renderPriceTrend();
+  renderTimingChart();
+  renderRescheduleChart();
+  renderWithdrawalBreakdown();
+  renderDetailTable();
+}
+
+// ============================================================
+// HEADER META
+// ============================================================
+function updateHeaderMeta() {
+  const dates = filteredData.map(r => r.appointment_date).filter(Boolean).sort();
+  const from = dates[0] || '—';
+  const to = dates[dates.length - 1] || '—';
+  document.getElementById('headerMeta').textContent = `${filteredData.length} cancellations · ${from} to ${to}`;
+}
+
+// ============================================================
+// KPI CARDS
+// ============================================================
+function renderKPIs() {
+  const d = filteredData;
+  const total = d.length;
+  const hq = d.filter(r => r._type === 'HQ').length;
+  const cust = d.filter(r => r._type === 'Customer').length;
+  const resched = d.filter(r => r._isReschedule).length;
+  const trueWd = total - resched;
+  const hours = d.map(r => parseFloat(r['cancelation_time_frame_hours'])).filter(h => !isNaN(h));
+  const avgHrs = hours.length ? (hours.reduce((a, b) => a + b, 0) / hours.length).toFixed(1) : '—';
+  const priceTooHigh = d.filter(r => r._fullReason === 'Customer: Price too high').length;
+  const partsHQ = d.filter(r => r._category === 'Parts Issue' && r._type === 'HQ').length;
+  const techHQ = d.filter(r => r._category === 'Technician / Labor Issue' && r._type === 'HQ').length;
+
+  const cards = [
+    { label:'Total Cancellations', value:fmt(total), cls:'total', color:'', sub:'All types' },
+    { label:'HQ Cancellations', value:fmt(hq), cls:'hq', color:'hq', sub:`${pct(hq,total)} of total` },
+    { label:'HQ % of Total', value:pct(hq,total), cls:'hq', color:'hq', sub:'Controllable ops' },
+    { label:'Customer Cancellations', value:fmt(cust), cls:'customer', color:'customer', sub:`${pct(cust,total)} of total` },
+    { label:'Customer % of Total', value:pct(cust,total), cls:'customer', color:'customer', sub:'Demand signals' },
+    { label:'Reschedules', value:fmt(resched), cls:'neutral', color:'', sub:`${pct(resched,total)} of total` },
+    { label:'True Withdrawals', value:fmt(trueWd), cls:'neutral', color:'', sub:`${pct(trueWd,total)} of total` },
+    { label:'Avg Cancel Time (hrs)', value:avgHrs, cls:'neutral', color:'', sub:'Before appointment' },
+    { label:'Price Too High', value:fmt(priceTooHigh), cls:'customer', color:'customer', sub:`${pct(priceTooHigh,cust)} of customer` },
+    { label:'Parts-Related HQ', value:fmt(partsHQ), cls:'hq', color:'hq', sub:`${pct(partsHQ,hq)} of HQ` },
+    { label:'Tech/Labor HQ', value:fmt(techHQ), cls:'hq', color:'hq', sub:`${pct(techHQ,hq)} of HQ` },
+  ];
+
+  document.getElementById('kpiGrid').innerHTML = cards.map(c => `
+    <div class="kpi-card ${escapeAttr(c.cls)}">
+      <div class="kpi-label">${escapeHtml(c.label)}</div>
+      <div class="kpi-value ${escapeAttr(c.color)}">${escapeHtml(c.value)}</div>
+      <div class="kpi-sub">${escapeHtml(c.sub)}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// INSIGHTS
+// ============================================================
+function renderInsights() {
+  const d = filteredData;
+  const total = d.length;
+  const hq = d.filter(r => r._type === 'HQ');
+  const cust = d.filter(r => r._type === 'Customer');
+  const hqCount = hq.length;
+  const custCount = cust.length;
+  const hqPct = total ? ((hqCount / total) * 100).toFixed(0) : 0;
+  const resched = d.filter(r => r._isReschedule).length;
+  const reschedPct = total ? ((resched / total) * 100).toFixed(0) : 0;
+
+  const topHQReason = topKey(count(hq, r => r._fullReason));
+  const topHQCat = topKey(count(hq, r => r._category));
+  const topCustReason = topKey(count(cust, r => r._fullReason));
+  const topCustCat = topKey(count(cust, r => r._category));
+  const topMarket = topKey(count(hq, r => r.market));
+  const topTech = topKey(count(hq, r => r.tech_name));
+  const priceTooHigh = cust.filter(r => r._fullReason === 'Customer: Price too high').length;
+  const pricePayment = cust.filter(r => r._category === 'Price / Payment Issue').length;
+  const partsHQ = hq.filter(r => r._category === 'Parts Issue').length;
+  const techLaborHQ = hq.filter(r => r._category === 'Technician / Labor Issue').length;
+  const topTimingBucket = topKey(count(d, r => r._timingBucket));
+
+  const items = [
+    { dot:'hq', text: total > 0
+      ? `<strong>${fmt(hqCount)} HQ cancellations</strong> represent <strong>${hqPct}%</strong> of all ${fmt(total)} cancellations.`
+        + (parseInt(hqPct, 10) >= 40 ? ' HQ cancellations represent a meaningful share and should be prioritized for operational review.' : '')
+      : 'No cancellations in selection.' },
+    { dot:'hq', text: topHQReason !== '—'
+      ? `Top HQ reason: <strong>${escapeHtml(topHQReason.replace('HQ:', '').trim())}</strong>`
+        + (topHQReason.includes('Part availability') ? '. Part availability is the leading HQ driver — review inventory and parts readiness.' : '.')
+      : 'No HQ cancellations.' },
+    { dot:'hq', text: `Top HQ category: <strong>${escapeHtml(topHQCat)}</strong>.`
+      + (topHQCat === 'Technician / Labor Issue' ? ' Technician/labor-related cancellations are a key operational constraint.' : '') },
+    { dot:'hq', text: topMarket !== '—' ? `Market with highest HQ cancellations: <strong>${escapeHtml(topMarket)}</strong>.` : 'No HQ market data.' },
+    { dot:'hq', text: topTech !== '—' ? `Technician with highest HQ cancellations: <strong>${escapeHtml(topTech)}</strong>.` : 'No HQ technician data.' },
+    { dot:'hq', text: `Parts-related HQ: <strong>${fmt(partsHQ)}</strong> (${pct(partsHQ,hqCount)} of HQ). Tech/Labor HQ: <strong>${fmt(techLaborHQ)}</strong> (${pct(techLaborHQ,hqCount)} of HQ).` },
+    { dot:'customer', text: topCustReason !== '—'
+      ? `Top customer reason: <strong>${escapeHtml(topCustReason.replace('Customer:', '').trim())}</strong>. Top category: <strong>${escapeHtml(topCustCat)}</strong>.`
+      : 'No customer cancellations.' },
+    { dot:'customer', text: priceTooHigh > 0
+      ? `<strong>${fmt(priceTooHigh)}</strong> Price Too High cancellations (${pct(priceTooHigh,custCount)} of customer). Price/Payment total: <strong>${fmt(pricePayment)}</strong> (${pct(pricePayment,custCount)}).`
+        + (priceTooHigh >= 2 ? ' Price too high cancellations are a pricing signal — monitor separately from HQ issues.' : '')
+      : 'No Price too high cancellations in selection.' },
+    { dot:'neutral', text: `Most common timing bucket: <strong>${escapeHtml(topTimingBucket)}</strong>.` },
+    { dot:'neutral', text: `<strong>${fmt(resched)}</strong> of ${fmt(total)} cancellations are reschedules (${reschedPct}%).`
+      + (parseInt(reschedPct, 10) >= 40 ? ' A large share are reschedules — gross cancellations may overstate true lost demand.' : '') },
+  ];
+
+  document.getElementById('insightsGrid').innerHTML = items.map(i => `
+    <div class="insight-item">
+      <div class="insight-dot ${escapeAttr(i.dot)}"></div>
+      <div class="insight-text">${i.text}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// GLOBAL / TREND TOGGLES
+// ============================================================
+function setGlobalMode(mode) {
+  globalMode = mode;
+  document.getElementById('gToggleCount').classList.toggle('active', mode === 'count');
+  document.getElementById('gTogglePct').classList.toggle('active', mode === 'pct');
+  updateAll();
+}
+
+function setTrendMode(mode) {
+  trendMode = mode;
+  document.getElementById('trendToggleCount').classList.toggle('active', mode === 'count');
+  document.getElementById('trendTogglePct').classList.toggle('active', mode === 'pct');
+  renderTrendChart();
+}
+
+function setPeriodMode(mode) {
+  periodMode = mode;
+  document.getElementById('pToggleDay').classList.toggle('active', mode === 'day');
+  document.getElementById('pToggleWeek').classList.toggle('active', mode === 'week');
+  document.getElementById('pToggleMonth').classList.toggle('active', mode === 'month');
+  renderTrendChart();
+  renderPriceTrend();
+}
+
+// ============================================================
+// TREND CHART
+// ============================================================
+function renderTrendChart() {
+  const d = filteredData;
+  const periods = [...new Set(d.map(r => getPeriodKey(r)).filter(Boolean))].sort();
+  const mode = trendMode;
+
+  const datasets = ['HQ','Customer','Other'].map((type, i) => {
+    const colors = [HQ_COLOR, CUST_COLOR, OTHER_COLOR];
+    const vals = periods.map(period => {
+      const periodRows = d.filter(r => getPeriodKey(r) === period);
+      const typeRows = periodRows.filter(r => r._type === type);
+      return mode === 'pct' ? pctValue(typeRows.length, periodRows.length) : typeRows.length;
+    });
+    return {
+      label:type,
+      data:vals,
+      backgroundColor:colors[i] + 'cc',
+      borderColor:colors[i],
+      borderWidth:1.5,
+      fill:true
+    };
+  });
+
+  makeChart('chartTrend', {
+    type:'bar',
+    data:{ labels:periods.map(formatPeriodLabel), datasets },
+    options:{
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ position:'top' },
+        tooltip:{
+          callbacks:{
+            title:(items) => `${getPeriodLabel()}: ${periods[items[0]?.dataIndex] || ''}`,
+            afterBody:(items) => {
+              const period = periods[items[0]?.dataIndex];
+              const periodRows = d.filter(r => getPeriodKey(r) === period);
+              const total = periodRows.length;
+              return items.map(item => {
+                const cnt = periodRows.filter(r => r._type === item.dataset.label).length;
+                return `  ${item.dataset.label}: ${cnt} (${pct(cnt,total)})`;
+              });
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ stacked:true, grid:{ display:false } },
+        y:{ stacked:true, beginAtZero:true, title:{ display:true, text:mode === 'pct' ? `% of ${getPeriodLabel()}` : 'Count' } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// HQ CHARTS
+// ============================================================
+function renderHQReasons() {
+  const hq = filteredData.filter(r => r._type === 'HQ');
+  const counts = count(hq, r => r._fullReason.replace('HQ:', '').trim());
+  const entries = sortedEntries(counts);
+  const total = hq.length;
+
+  makeChart('chartHQReasons', {
+    type:'bar',
+    data:{
+      labels:entries.map(e => e[0]),
+      datasets:[{
+        label:'HQ Cancellations',
+        data:entries.map(e => globalMode === 'pct' ? pctValue(e[1], total) : e[1]),
+        backgroundColor:HQ_COLOR + 'cc',
+        borderColor:HQ_COLOR,
+        borderWidth:1.5,
+        borderRadius:4
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label:item => {
+          const cnt = entries[item.dataIndex]?.[1] || 0;
+          return ` ${cnt} (${pct(cnt,total)} of HQ)`;
+        }}}
+      },
+      scales:{
+        x:{ beginAtZero:true, grid:{ display:false }, title:{ display:true, text:globalMode === 'pct' ? '% of HQ' : 'Count' } },
+        y:{ grid:{ display:false } }
+      }
+    }
+  });
+}
+
+function renderHQCategories() {
+  const hq = filteredData.filter(r => r._type === 'HQ');
+  const counts = count(hq, r => r._category);
+  const entries = sortedEntries(counts);
+  const total = hq.length;
+
+  makeChart('chartHQCategories', {
+    type:'bar',
+    data:{
+      labels:entries.map(e => e[0]),
+      datasets:[{
+        label:'HQ Cancellations',
+        data:entries.map(e => globalMode === 'pct' ? pctValue(e[1], total) : e[1]),
+        backgroundColor:HQ_COLOR + 'aa',
+        borderColor:HQ_COLOR,
+        borderWidth:1.5,
+        borderRadius:4
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label:item => {
+          const cnt = entries[item.dataIndex]?.[1] || 0;
+          return ` ${cnt} (${pct(cnt,total)} of HQ)`;
+        }}}
+      },
+      scales:{
+        x:{ beginAtZero:true, grid:{ display:false }, title:{ display:true, text:globalMode === 'pct' ? '% of HQ' : 'Count' } },
+        y:{ grid:{ display:false } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// MARKET
+// ============================================================
+function renderMarketChart() {
+  const d = filteredData;
+  const markets = [...new Set(d.map(r => r.market).filter(Boolean))].sort((a, b) => {
+    const hqA = d.filter(r => r.market === a && r._type === 'HQ').length;
+    const hqB = d.filter(r => r.market === b && r._type === 'HQ').length;
+    return hqB - hqA;
+  });
+
+  const hqCounts = markets.map(m => d.filter(r => r.market === m && r._type === 'HQ').length);
+  const custCounts = markets.map(m => d.filter(r => r.market === m && r._type === 'Customer').length);
+
+  makeChart('chartMarket', {
+    type:'bar',
+    data:{
+      labels:markets,
+      datasets:[
+        { label:'HQ', data:hqCounts, backgroundColor:HQ_COLOR + 'cc', borderColor:HQ_COLOR, borderWidth:1.5, borderRadius:4 },
+        { label:'Customer', data:custCounts, backgroundColor:CUST_COLOR + 'cc', borderColor:CUST_COLOR, borderWidth:1.5, borderRadius:4 }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ position:'top' },
+        tooltip:{ callbacks:{ afterBody:items => {
+          const m = items[0]?.label;
+          const total = d.filter(r => r.market === m).length;
+          const hq = d.filter(r => r.market === m && r._type === 'HQ').length;
+          return [`Total: ${total}`, `HQ%: ${pct(hq,total)}`];
+        }}}
+      },
+      scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, grid:{ display:false } } }
+    }
+  });
+}
+
+function renderMarketTable() {
+  const d = filteredData;
+  const markets = [...new Set(d.map(r => r.market).filter(Boolean))];
+  const rows = markets.map(m => {
+    const md = d.filter(r => r.market === m);
+    const hq = md.filter(r => r._type === 'HQ');
+    const cust = md.filter(r => r._type === 'Customer');
+    const topReason = topKey(count(hq, r => r._reason)) || '—';
+    const topCat = topKey(count(hq, r => r._category)) || '—';
+    return { m, total:md.length, hqCount:hq.length, custCount:cust.length, topReason, topCat };
+  }).sort((a, b) => b.hqCount - a.hqCount);
+
+  const tbody = document.getElementById('marketTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><div class="empty-icon">📭</div>No data for current filters</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${escapeHtml(r.m)}</strong></td>
+      <td>${fmt(r.total)}</td>
+      <td class="hq-cell">${fmt(r.hqCount)}</td>
+      <td>${pct(r.hqCount,r.total)}</td>
+      <td>${escapeHtml(r.topReason)}</td>
+      <td>${escapeHtml(r.topCat)}</td>
+    </tr>
+  `).join('');
+}
+
+// ============================================================
+// TECHNICIAN TABLE
+// ============================================================
+function setTechMode(mode) {
+  techMode = mode;
+  document.getElementById('techToggleAssigned').classList.toggle('active', mode === 'assigned');
+  document.getElementById('techToggleOriginal').classList.toggle('active', mode === 'original');
+  renderTechTable();
+}
+
+function renderTechTable() {
+  const d = filteredData;
+  const field = techMode === 'assigned' ? 'tech_name' : 'original_technician';
+  const techs = [...new Set(d.map(r => r[field]).filter(Boolean))];
+  const rows = techs.map(t => {
+    const td = d.filter(r => r[field] === t);
+    const hq = td.filter(r => r._type === 'HQ');
+    const cust = td.filter(r => r._type === 'Customer');
+    const topReason = topKey(count(hq, r => r._reason)) || '—';
+    const topCat = topKey(count(hq, r => r._category)) || '—';
+    return { t, total:td.length, hqCount:hq.length, custCount:cust.length, topReason, topCat };
+  }).sort((a, b) => b.hqCount - a.hqCount);
+
+  const tbody = document.getElementById('techTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><div class="empty-icon">📭</div>No data</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${escapeHtml(r.t)}</strong></td>
+      <td>${fmt(r.total)}</td>
+      <td class="hq-cell">${fmt(r.hqCount)}</td>
+      <td class="customer-cell">${fmt(r.custCount)}</td>
+      <td>${pct(r.hqCount,r.total)}</td>
+      <td>${escapeHtml(r.topReason)}</td>
+      <td>${escapeHtml(r.topCat)}</td>
+    </tr>
+  `).join('');
+}
+
+// ============================================================
+// CUSTOMER CHARTS
+// ============================================================
+function renderCustReasons() {
+  const cust = filteredData.filter(r => r._type === 'Customer');
+  const counts = count(cust, r => r._fullReason.replace('Customer:', '').trim());
+  const entries = sortedEntries(counts);
+  const total = cust.length;
+  const highlight = ['Price too high','Schedule conflict','No show or no response','Decided on alternative option'];
+
+  makeChart('chartCustReasons', {
+    type:'bar',
+    data:{
+      labels:entries.map(e => e[0]),
+      datasets:[{
+        label:'Customer Cancellations',
+        data:entries.map(e => globalMode === 'pct' ? pctValue(e[1], total) : e[1]),
+        backgroundColor:entries.map(e => highlight.some(h => e[0].includes(h)) ? CUST_COLOR + 'ee' : CUST_COLOR + '55'),
+        borderColor:entries.map(e => highlight.some(h => e[0].includes(h)) ? CUST_COLOR : CUST_COLOR + '88'),
+        borderWidth:1.5,
+        borderRadius:4
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label:item => {
+          const cnt = entries[item.dataIndex]?.[1] || 0;
+          return ` ${cnt} (${pct(cnt,total)} of customer)`;
+        }}}
+      },
+      scales:{
+        x:{ beginAtZero:true, grid:{ display:false }, title:{ display:true, text:globalMode === 'pct' ? '% of Customer' : 'Count' } },
+        y:{ grid:{ display:false } }
+      }
+    }
+  });
+}
+
+function renderCustCategories() {
+  const cust = filteredData.filter(r => r._type === 'Customer');
+  const counts = count(cust, r => r._category);
+  const entries = sortedEntries(counts);
+  const total = cust.length;
+
+  makeChart('chartCustCategories', {
+    type:'bar',
+    data:{
+      labels:entries.map(e => e[0]),
+      datasets:[{
+        label:'Customer Cancellations',
+        data:entries.map(e => globalMode === 'pct' ? pctValue(e[1], total) : e[1]),
+        backgroundColor:CUST_COLOR + '88',
+        borderColor:CUST_COLOR,
+        borderWidth:1.5,
+        borderRadius:4
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label:item => {
+          const cnt = entries[item.dataIndex]?.[1] || 0;
+          return ` ${cnt} (${pct(cnt,total)} of customer)`;
+        }}}
+      },
+      scales:{
+        x:{ beginAtZero:true, grid:{ display:false }, title:{ display:true, text:globalMode === 'pct' ? '% of Customer' : 'Count' } },
+        y:{ grid:{ display:false } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// PRICE TREND
+// ============================================================
+function renderPriceTrend() {
+  const d = filteredData;
+  const periods = [...new Set(d.map(r => getPeriodKey(r)).filter(Boolean))].sort();
+  const priceData = periods.map(period => {
+    const periodRows = d.filter(r => getPeriodKey(r) === period);
+    const priceRows = periodRows.filter(r => r._fullReason === 'Customer: Price too high');
+    return globalMode === 'pct' ? pctValue(priceRows.length, periodRows.length) : priceRows.length;
+  });
+
+  makeChart('chartPrice', {
+    type:'bar',
+    data:{
+      labels:periods.map(formatPeriodLabel),
+      datasets:[{
+        label:'Price Too High',
+        data:priceData,
+        backgroundColor:CUST_COLOR + '99',
+        borderColor:CUST_COLOR,
+        borderWidth:1.5,
+        borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ title:(items) => `${getPeriodLabel()}: ${periods[items[0]?.dataIndex] || ''}` } }
+      },
+      scales:{
+        x:{ grid:{ display:false } },
+        y:{ beginAtZero:true, grid:{ display:false }, title:{ display:true, text:globalMode === 'pct' ? `% of ${getPeriodLabel()}` : 'Count' } }
+      }
+    }
+  });
+}
+
+// ============================================================
+// TIMING
+// ============================================================
+function renderTimingChart() {
+  const d = filteredData;
+  const hq = d.filter(r => r._type === 'HQ');
+  const cust = d.filter(r => r._type === 'Customer');
+
+  makeChart('chartTiming', {
+    type:'bar',
+    data:{
+      labels:TIMING_BUCKETS,
+      datasets:[
+        { label:'HQ', data:TIMING_BUCKETS.map(b => hq.filter(r => r._timingBucket === b).length), backgroundColor:HQ_COLOR + 'cc', borderColor:HQ_COLOR, borderWidth:1.5, borderRadius:4 },
+        { label:'Customer', data:TIMING_BUCKETS.map(b => cust.filter(r => r._timingBucket === b).length), backgroundColor:CUST_COLOR + 'cc', borderColor:CUST_COLOR, borderWidth:1.5, borderRadius:4 }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{ legend:{ position:'top' } },
+      scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, grid:{ display:false } } }
+    }
+  });
+}
+
+// ============================================================
+// RESCHEDULE
+// ============================================================
+function renderRescheduleChart() {
+  const d = filteredData;
+  const resched = d.filter(r => r._isReschedule).length;
+  const trueWd = d.length - resched;
+
+  makeChart('chartReschedule', {
+    type:'doughnut',
+    data:{
+      labels:['Reschedule','True Withdrawal'],
+      datasets:[{
+        data:[resched,trueWd],
+        backgroundColor:[HQ_COLOR + 'cc', OTHER_COLOR + 'cc'],
+        borderColor:[HQ_COLOR, OTHER_COLOR],
+        borderWidth:2
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:true,
+      plugins:{
+        legend:{ position:'bottom' },
+        tooltip:{ callbacks:{ label:item => {
+          const v = item.raw;
+          const t = d.length;
+          return ` ${v} (${pct(v,t)})`;
+        }}}
+      }
+    }
+  });
+}
+
+function renderWithdrawalBreakdown() {
+  const d = filteredData;
+  const total = d.length;
+  const types = ['Reschedule','True Withdrawal'];
+  const wrap = document.getElementById('withdrawalBreakdown');
+
+  wrap.innerHTML = types.map(type => {
+    const hqCnt = d.filter(r => r._withdrawalType === type && r._type === 'HQ').length;
+    const custCnt = d.filter(r => r._withdrawalType === type && r._type === 'Customer').length;
+    const typeCnt = d.filter(r => r._withdrawalType === type).length;
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${escapeHtml(type)}</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px;">
+          ${fmt(typeCnt)} <span style="font-size:13px;font-weight:400;color:var(--text-muted)">${pct(typeCnt,total)}</span>
+        </div>
+        <div style="display:flex;gap:12px;font-size:12px;flex-wrap:wrap;">
+          <span style="color:var(--hq);font-weight:600;">HQ: ${fmt(hqCnt)} (${pct(hqCnt,typeCnt)})</span>
+          <span style="color:var(--customer);font-weight:600;">Customer: ${fmt(custCnt)} (${pct(custCnt,typeCnt)})</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// DETAIL TABLE
+// ============================================================
+function renderDetailTable() {
+  const search = document.getElementById('tableSearch').value.toLowerCase();
+  let rows = filteredData.filter(r => {
+    if (!search) return true;
+    return [
+      r.appointment_date,
+      r.market,
+      r.jobnumber,
+      r.tech_name,
+      r.original_technician,
+      r._type,
+      r._reason,
+      r._category,
+      r.status
+    ].join(' ').toLowerCase().includes(search);
+  });
+
+  if (detailSortState.col >= 0) {
+    const fields = ['appointment_date','market','jobnumber','tech_name','original_technician','_type','_reason','_category','status','_timingBucket','cancelation_time_frame_hours'];
+    rows = [...rows].sort((a, b) => {
+      const f = fields[detailSortState.col];
+      const av = a[f] || '';
+      const bv = b[f] || '';
+      const an = parseFloat(av);
+      const bn = parseFloat(bv);
+      const cmp = !isNaN(an) && !isNaN(bn) ? an - bn : String(av).localeCompare(String(bv));
+      return detailSortState.asc ? cmp : -cmp;
+    });
+  }
+
+  const total = rows.length;
+  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  detailPage = Math.min(Math.max(detailPage, 1), pages);
+  const slice = rows.slice((detailPage - 1) * PAGE_SIZE, detailPage * PAGE_SIZE);
+
+  document.getElementById('pageInfo').textContent = `${fmt(total)} rows · Page ${detailPage}/${pages}`;
+  document.getElementById('prevBtn').disabled = detailPage <= 1;
+  document.getElementById('nextBtn').disabled = detailPage >= pages;
+
+  const tbody = document.getElementById('detailTableBody');
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state"><div class="empty-icon">📭</div>No results match the current filters or search</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = slice.map(r => {
+    const safeLink = r.link && /^https?:\/\//i.test(r.link) ? r.link : '';
+    return `
+      <tr>
+        <td class="mono">${escapeHtml(r.appointment_date)}</td>
+        <td>${escapeHtml(r.market)}</td>
+        <td class="link-cell">${safeLink ? `<a href="${escapeAttr(safeLink)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.jobnumber)}</a>` : escapeHtml(r.jobnumber)}</td>
+        <td>${escapeHtml(r.tech_name || '—')}</td>
+        <td>${escapeHtml(r.original_technician || '—')}</td>
+        <td><span class="badge ${escapeAttr(String(r._type).toLowerCase())}">${escapeHtml(r._type)}</span></td>
+        <td>${escapeHtml(r._reason)}</td>
+        <td>${escapeHtml(r._category)}</td>
+        <td>${escapeHtml(r.status)}</td>
+        <td>${escapeHtml(r._timingBucket)}</td>
+        <td class="mono">${escapeHtml(r['cancelation_time_frame_hours'] || '—')}</td>
+        <td class="mono">${escapeHtml(r['withdrawn date'] || '—')}</td>
+        <td class="mono">${escapeHtml(r.appointment_create_date || '—')}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function sortDetailTable(col) {
+  if (detailSortState.col === col) {
+    detailSortState.asc = !detailSortState.asc;
+  } else {
+    detailSortState = { col, asc:true };
+  }
+  detailPage = 1;
+  renderDetailTable();
+}
+
+function changePage(dir) {
+  detailPage += dir;
+  renderDetailTable();
+}
+
+function exportCSV() {
+  const headers = [
+    'appointment_date','market','jobnumber','tech_name','original_technician',
+    'cancellation_type','cancellation_reason_clean','reason_category','status',
+    'cancellation_timing_bucket','cancelation_time_frame_hours','withdrawn_date',
+    'appointment_create_date','link'
+  ];
+
+  const rows = filteredData.map(r => headers.map(h => {
+    const map = {
+      cancellation_type:r._type,
+      cancellation_reason_clean:r._reason,
+      reason_category:r._category,
+      cancellation_timing_bucket:r._timingBucket,
+      withdrawn_date:r['withdrawn date']
+    };
+    return JSON.stringify(map[h] ?? r[h] ?? '');
+  }).join(','));
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = 'cancellations.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// TABLE SORT FOR MARKET / TECH TABLES
+// ============================================================
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  const tbody = table.querySelector('tbody');
+  const rows = [...tbody.querySelectorAll('tr')].filter(r => r.cells.length > colIdx);
+  const th = table.querySelectorAll('th')[colIdx];
+  const asc = th.dataset.asc !== 'true';
+
+  table.querySelectorAll('th').forEach(t => {
+    t.dataset.asc = '';
+    t.classList.remove('sorted');
+  });
+
+  th.dataset.asc = asc;
+  th.classList.add('sorted');
+
+  rows.sort((a, b) => {
+    const av = a.cells[colIdx]?.textContent.trim() || '';
+    const bv = b.cells[colIdx]?.textContent.trim() || '';
+    const an = parseFloat(av.replace('%','').replace(/,/g,''));
+    const bn = parseFloat(bv.replace('%','').replace(/,/g,''));
+    const cmp = !isNaN(an) && !isNaN(bn) ? an - bn : av.localeCompare(bv);
+    return asc ? cmp : -cmp;
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+init();
+</script>
+</body>
+</html>
